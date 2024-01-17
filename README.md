@@ -1,7 +1,7 @@
 This package implements the mathematical model of the "Multi Port Stowage Planning" (MPSP) problem, introduced in [Avriel et. al 1998](https://www.researchgate.net/publication/242916342_Stowage_planning_for_container_ships_to_reduce_the_number_of_shifts), as a reinforcement learning environment using the [Gymnasiun api](https://gymnasium.farama.org/api/env/).
 
-![](env.png)
-*Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the stowage plan of the agent.*
+![](https://raw.githubusercontent.com/hojmax/MPSPEnv/main/env.png)
+*Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the agents stowage plan.*
 
 The Env class has the following input parameters:
 
