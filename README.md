@@ -1,4 +1,7 @@
-This package implements the mathematical model of the "Multi Port Stowage Planning" (MPSP) problem, introduced in [Avriel et. al 1998](https://www.researchgate.net/publication/242916342_Stowage_planning_for_container_ships_to_reduce_the_number_of_shifts), as a reinforcement learning environment using the Gymnasium api. Please see the [Gymnasiun documentation](https://gymnasium.farama.org/api/env/) for more information on what functions are available.
+This package implements the mathematical model of the "Multi Port Stowage Planning" (MPSP) problem, introduced in [Avriel et. al 1998](https://www.researchgate.net/publication/242916342_Stowage_planning_for_container_ships_to_reduce_the_number_of_shifts), as a reinforcement learning environment using the [Gymnasiun api](https://gymnasium.farama.org/api/env/).
+
+![](env.png)
+*Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the stowage plan of the agent.*
 
 The Env class has the following input parameters:
 
@@ -6,6 +9,8 @@ The Env class has the following input parameters:
 - **C** (int): number of columns
 - **N** (int): number of ports
 - **skip_last_port** (boolean): if true, the environment will terminate at the second to last port. This is useful for speeding up training, as the last port is trivial to solve.
+
+The env observations consist of a dictionary with the one hot encoded bay, and the upper triangular part of the transportation matrix as a flattened array.
 
 Note that since the mathematical model disregards any stability constraints, the env automatically swaps the column order in a lexocographic manor, based on the containers in the columns. This reduces the state space, by a factor of almost $C!$. Furthmore, the transportation matrix, is reshifted up and to the left, for each port, to reduce the state space even further.
 
@@ -36,47 +41,34 @@ If you wish to try the env yourself, placing containers using keys 0-3 and remov
 
 ```python
 from MPSPEnv import Env
-import numpy as np
-import pygame
+import pygame, numpy as np
 
 
 def get_action_from_key(key):
-    if key in [
-        pygame.K_0,
-        pygame.K_1,
-        pygame.K_2,
-        pygame.K_3,
-        pygame.K_4,
-        pygame.K_5,
-        pygame.K_6,
-        pygame.K_7,
-    ]:
-        return key - pygame.K_0
-    return None
+    return key - pygame.K_0 if pygame.K_0 <= key <= pygame.K_7 else None
 
 
 if __name__ == "__main__":
     env = Env(3, 4, 6)
     env.reset()
 
-    running = True
-    while running:
+    while True:
         env.render()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-                break
-            if event.type == pygame.KEYDOWN:
-                action = get_action_from_key(event.key)
-                if action is not None:
-                    _, reward, done, _, _ = env.step(action)
-
-                    if done:
-                        running = False
+                env.close()
+                exit()
+            elif (
+                event.type == pygame.KEYDOWN
+                and (action := get_action_from_key(event.key)) is not None
+            ):
+                _, reward, done, _, _ = env.step(action)
+                if done:
+                    env.render()
+                    pygame.time.wait(1000)
+                    env.close()
+                    exit()
 
         pygame.time.wait(10)
-
-    pygame.time.wait(1000)
-    env.close()
 ```

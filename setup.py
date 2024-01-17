@@ -21,12 +21,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="MPSPEnv",
-    version="0.0.1",
+    version="0.0.2",
     author="Axel Højmark",
     author_email="axelhojmark@gmail.com",
     description="A reinforcement learning environment for the Multi Port Stowage Planning problem",
     long_description=long_description,
     long_description_content_type="text/markdown",
     ext_modules=[ext_modules],
-    packages=["MPSPEnv"]
+    packages=["MPSPEnv"],
+    project_urls={
+        "Repository": "https://github.com/hojmax/MPSPEnv",
+    },
 )
