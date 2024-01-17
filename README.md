@@ -1,8 +1,5 @@
 This package implements the mathematical model of the "Multi Port Stowage Planning" (MPSP) problem, introduced in [Avriel et. al 1998](https://www.researchgate.net/publication/242916342_Stowage_planning_for_container_ships_to_reduce_the_number_of_shifts), as a reinforcement learning environment using the [Gymnasiun api](https://gymnasium.farama.org/api/env/).
 
-![](https://raw.githubusercontent.com/hojmax/MPSPEnv/main/env.png)
-*Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the agents stowage plan.*
-
 The Env class has the following input parameters:
 
 - **R** (int): number of rows
@@ -11,6 +8,11 @@ The Env class has the following input parameters:
 - **skip_last_port** (boolean): if true, the environment will terminate at the second to last port. This is useful for speeding up training, as the last port is trivial to solve.
 
 The env observations consist of a dictionary with the one hot encoded bay, and the upper triangular part of the transportation matrix as a flattened array.
+
+
+![](https://raw.githubusercontent.com/hojmax/MPSPEnv/main/env.png)
+*Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the agents stowage plan.*
+
 
 Note that since the mathematical model disregards any stability constraints, the env automatically swaps the column order in a lexocographic manor, based on the containers in the columns. This reduces the state space, by a factor of almost $C!$. Furthmore, the transportation matrix, is reshifted up and to the left, for each port, to reduce the state space even further.
 
