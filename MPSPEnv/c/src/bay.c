@@ -3,19 +3,26 @@
 #include <assert.h>
 #include <stdio.h>
 
+int containers_in_column(Bay bay, int column)
+{
+    return bay.column_counts.values[column];
+}
+
 int is_column_empty(Bay bay, int column)
 {
-    return bay.column_counts.values[column] == 0;
+    return containers_in_column(bay, column) == 0;
 }
 
 int is_full_column(Bay bay, int column)
 {
-    return bay.column_counts.values[column] == bay.R;
+    return containers_in_column(bay, column) == bay.R;
 }
 
 void update_column_mask(Bay bay, int column)
 {
+    // Add mask
     bay.mask.values[column] = !is_full_column(bay, column);
+    // Remove mask
     bay.mask.values[column + bay.C] = !is_column_empty(bay, column);
 }
 
@@ -27,15 +34,10 @@ void insert_mask(Bay bay)
     }
 }
 
-int containers_in_column(Bay bay, int column)
-{
-    return bay.column_counts.values[column];
-}
-
 int find_min_container_in_column(Bay bay, int column)
 {
     int min = bay.N;
-    int start_row = bay.R - containers_in_column(bay, column);
+    const int start_row = bay.R - containers_in_column(bay, column);
 
     for (int i = start_row; i < bay.R; i++)
     {
@@ -49,17 +51,22 @@ int find_min_container_in_column(Bay bay, int column)
     return min;
 }
 
+int *min_container_ref(Bay bay, int column)
+{
+    return &bay.min_container_per_column.values[column];
+}
+
 // Checks bottom up for containers going to current port (always 1)
 // If container is 1, then it is offloaded, and so are all the containers above it
 void offload_column(Bay bay, int j, Array offloaded_containers)
 {
     int offload_column_rest = 0;
-    int min_row = bay.R - bay.column_counts.values[j];
-    int max_row = bay.R - 1;
+    const int min_row = bay.R - containers_in_column(bay, j);
+    const int max_row = bay.R - 1;
     for (int i = max_row; i >= min_row; i--)
     {
-        int index = i * bay.C + j;
-        int container = bay.matrix.values[index];
+        const int index = i * bay.C + j;
+        const int container = bay.matrix.values[index];
 
         if (container == 1)
             offload_column_rest = 1;
@@ -73,7 +80,7 @@ void offload_column(Bay bay, int j, Array offloaded_containers)
     }
     if (offload_column_rest)
     {
-        bay.min_container_per_column.values[j] = find_min_container_in_column(bay, j);
+        *min_container_ref(bay, j) = find_min_container_in_column(bay, j);
     }
 }
 
@@ -92,12 +99,12 @@ void decrement_bay(Bay bay)
 {
     for (int j = 0; j < bay.C; j++)
     {
-        for (int i = bay.R - bay.column_counts.values[j]; i < bay.R; i++)
+        for (int i = bay.R - containers_in_column(bay, j); i < bay.R; i++)
         {
-            int index = i * bay.C + j;
+            const int index = i * bay.C + j;
             bay.matrix.values[index]--;
         }
-        if (bay.column_counts.values[j] > 0)
+        if (containers_in_column(bay, j) > 0)
             bay.min_container_per_column.values[j]--;
     }
 }
@@ -139,12 +146,6 @@ void free_bay(Bay bay)
     free_array(bay.column_counts);
     free_array(bay.mask);
 }
-
-int *min_container_ref(Bay bay, int column)
-{
-    return &bay.min_container_per_column.values[column];
-}
-
 void update_min_post_insertion(Bay bay, int column, int container)
 {
     if (container < *min_container_ref(bay, column))

@@ -54,14 +54,6 @@ Array get_full(int n, int value)
     return array;
 }
 
-void fill_array(Array array, int value)
-{
-    for (int i = 0; i < array.n; i++)
-    {
-        array.values[i] = value;
-    }
-}
-
 // Returns range [start, end)
 Array get_range(int start, int end)
 {
@@ -76,17 +68,6 @@ Array get_range(int start, int end)
     return array;
 }
 
-void shuffle_array(Array array)
-{
-    for (int i = 0; i < array.n; i++)
-    {
-        int j = random_uniform_int(i, array.n);
-        int temp = array.values[i];
-        array.values[i] = array.values[j];
-        array.values[j] = temp;
-    }
-}
-
 void shift_array_left(Array array, int n_shifts)
 {
     assert(n_shifts >= 0);
@@ -95,19 +76,6 @@ void shift_array_left(Array array, int n_shifts)
         array.values[i] = array.values[i + n_shifts];
     }
     for (int i = array.n - n_shifts; i < array.n; i++)
-    {
-        array.values[i] = 0;
-    }
-}
-
-void shift_array_right(Array array, int n_shifts)
-{
-    assert(n_shifts >= 0);
-    for (int i = array.n - 1; i >= n_shifts; i--)
-    {
-        array.values[i] = array.values[i - n_shifts];
-    }
-    for (int i = 0; i < n_shifts; i++)
     {
         array.values[i] = 0;
     }

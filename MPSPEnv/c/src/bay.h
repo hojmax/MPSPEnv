@@ -17,8 +17,6 @@ Bay get_bay(int R, int C, int N);
 
 void free_bay(Bay bay);
 
-int is_column_empty(Bay bay, int column);
-
 int is_container_blocking(Bay bay, int column, int container);
 
 int get_top_container(Bay bay, int column);

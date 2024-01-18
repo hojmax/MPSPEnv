@@ -15,15 +15,9 @@ Array get_zeros(int n);
 
 Array get_full(int n, int value);
 
-void fill_array(Array array, int value);
-
 Array get_range(int start, int end);
 
-void shuffle_array(Array array);
-
 void shift_array_left(Array array, int shifts);
-
-void shift_array_right(Array array, int shifts);
 
 void print_matrix(Array array, int w, int h);
 
