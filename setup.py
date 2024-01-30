@@ -32,4 +32,5 @@ setup(
     project_urls={
         "Repository": "https://github.com/hojmax/MPSPEnv",
     },
+    install_requires=["pygame", "gymnasium", "numpy"],
 )
