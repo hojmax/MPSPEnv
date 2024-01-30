@@ -96,16 +96,6 @@ void transportation_insert_reshuffled(Transportation_Info *T, Array reshuffled)
     }
 }
 
-int get_needed_shifts(Transportation_Info *T)
-{
-    for (int i = 1; i < T->N - T->current_port; i++)
-    {
-        if (T->containers_per_port.values[i] > 0)
-            return i;
-    }
-    return 0;
-}
-
 int is_last_port(Transportation_Info *T)
 {
     return T->current_port == T->N - 1;
