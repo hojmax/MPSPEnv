@@ -15,6 +15,7 @@ class Env(gym.Env):
     - C: number of columns in the bay
     - N: number of ports
     - skip_last_port: whether to terminate episodes at the second to last port (default: False)
+    - take_first_action: whether to automaticlly place the first container of every episode (default: False)
     """
 
     def __init__(
@@ -23,6 +24,7 @@ class Env(gym.Env):
         C: int,
         N: int,
         skip_last_port: bool = False,
+        take_first_action: bool = False,
     ):
         super().__init__()
         assert R > 0, f"R must be positive but was {R}"
@@ -34,8 +36,9 @@ class Env(gym.Env):
         self._env = None
         self.visualizer = None
         self.skip_last_port = skip_last_port
+        self.take_first_action = take_first_action
         self.action_probs = None
-        self.total_reward = None
+        self.total_reward = 0
 
         self._set_gym_interface()
 
@@ -114,6 +117,10 @@ class Env(gym.Env):
     def reset(self, seed: int = None):
         self._reset_random_c_env(seed)
         self.total_reward = 0
+
+        if self.take_first_action:
+            self.step(0)
+
         return self._get_observation(), {}
 
     def assert_transportation(self, transportation: np.ndarray):
