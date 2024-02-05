@@ -172,6 +172,10 @@ class Env(gym.Env):
     def reset_to_transportation(self, transportation: np.ndarray):
         self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
+
+        if self.take_first_action:
+            self.step(0)
+
         return self._get_observation(), {}
 
     def _get_observation(self):
