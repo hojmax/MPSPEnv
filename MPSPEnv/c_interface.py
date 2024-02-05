@@ -40,6 +40,7 @@ class Env(Structure):
         ("bay", Bay),
         ("one_hot_bay", Array),
         ("flat_T_matrix", Array),
+        ("skip_last_port", c_int),
     ]
 
 
