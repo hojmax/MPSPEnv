@@ -16,6 +16,7 @@ class Env(gym.Env):
     - N: number of ports
     - skip_last_port: whether to terminate episodes at the second to last port (default: False)
     - take_first_action: whether to automaticlly place the first container of every episode (default: False)
+    - strict_mask: whether to break when an invalid action is taken. Otherwise a penalty of -10 is given (default: False)
     """
 
     def __init__(
@@ -25,6 +26,7 @@ class Env(gym.Env):
         N: int,
         skip_last_port: bool = False,
         take_first_action: bool = False,
+        strict_mask: bool = False,
     ):
         super().__init__()
         assert R > 0, f"R must be positive but was {R}"
@@ -37,6 +39,7 @@ class Env(gym.Env):
         self.visualizer = None
         self.skip_last_port = skip_last_port
         self.take_first_action = take_first_action
+        self.strict_mask = strict_mask
         self.action_probs = None
         self.total_reward = 0
 
@@ -65,16 +68,25 @@ class Env(gym.Env):
         assert (
             0 <= action < 2 * self.C
         ), f"Action must be in the range [0, 2C). The first C actions correspond to adding a container into the respective column, the last C actions correspond to removing a container from the respective column."
-        assert (
-            self._mask[action] == 1
-        ), f"The action {action} is not allowed. The mask is {self._mask}"
-        step_info = c_lib.step(self._env, action)
-        self.total_reward += step_info.reward
+        if self.strict_mask:
+            assert (
+                self._mask[action] == 1
+            ), f"The action {action} is not allowed. The mask is {self._mask}"
+
+        reward = -10
+        is_terminal = False
+
+        if self._mask[action] == 1:
+            step_info = c_lib.step(self._env, action)
+            reward = step_info.reward
+            is_terminal = bool(step_info.is_terminal)
+
+        self.total_reward += reward
 
         return (
             self._get_observation(),
-            step_info.reward,
-            bool(step_info.is_terminal),
+            reward,
+            is_terminal,
             False,
             {},
         )
