@@ -49,6 +49,7 @@ class StepInfo(Structure):
         ("reward", c_int),
     ]
 
+
 directory = os.path.dirname(os.path.abspath(__file__))
 c_lib_files = glob.glob(os.path.join(directory, "c_lib*.so"))
 

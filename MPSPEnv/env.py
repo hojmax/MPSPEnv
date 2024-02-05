@@ -123,7 +123,7 @@ class Env(gym.Env):
 
         return self._get_observation(), {}
 
-    def assert_transportation(self, transportation: np.ndarray):
+    def _assert_transportation(self, transportation: np.ndarray):
         assert (
             transportation.dtype == np.int32
         ), f"Transportation matrix must be of type np.int32 but was {transportation.dtype}"
@@ -158,7 +158,7 @@ class Env(gym.Env):
         return True
 
     def reset_to_transportation(self, transportation: np.ndarray):
-        self.assert_transportation(transportation)
+        self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
         return self._get_observation(), {}
 

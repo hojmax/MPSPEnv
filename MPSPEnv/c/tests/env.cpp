@@ -80,3 +80,56 @@ TEST(env, blocking)
     CHECK(step_info.reward == 0);
     free_env(env);
 }
+
+TEST(env, skip_last_port1)
+{
+    int R = 4;
+    int C = 3;
+    int N = 6;
+    int T_matrix[] = {
+        0, 1, 1, 0, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 1,
+        0, 0, 0, 0, 0, 5,
+        0, 0, 0, 0, 0, 0};
+    Env env = get_specific_env(R, C, N, T_matrix, 0);
+    StepInfo step_info;
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    CHECK(step_info.is_terminal == 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    CHECK(step_info.is_terminal == 0);
+    step_info = step(env, 0);
+    CHECK(step_info.is_terminal == 1);
+    free_env(env);
+}
+
+TEST(env, skip_last_port2)
+{
+    int R = 4;
+    int C = 3;
+    int N = 6;
+    int T_matrix[] = {
+        0, 1, 1, 0, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 1,
+        0, 0, 0, 0, 0, 5,
+        0, 0, 0, 0, 0, 0};
+    Env env = get_specific_env(R, C, N, T_matrix, 1);
+    StepInfo step_info;
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    step_info = step(env, 0);
+    CHECK(step_info.is_terminal == 1);
+    free_env(env);
+}
