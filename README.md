@@ -6,15 +6,15 @@ The Env class has the following input parameters:
 - **C** (int): number of columns
 - **N** (int): number of ports
 - **skip_last_port** (boolean): if true, the environment will terminate at the second to last port. This is useful for speeding up training, as the last port is trivial to solve.
+- **take_first_action** (boolean): if true, the environment automaticlly places the first container of every episode. This is useful for speeding up training, as the first action is trivial.
+- **strict_mask** (boolean): if true, the environment will break when an invalid action is taken. Otherwise a penalty of -10 is given, and no change is made to the state.
 
 The env observations consist of a dictionary with the one hot encoded bay, and the upper triangular part of the transportation matrix as a flattened array.
-
 
 ![](https://raw.githubusercontent.com/hojmax/MPSPEnv/main/env.png)
 *Screenshot from the environment. The left matrix is the bay, and the right matrix is the transportation matrix. "x" denotes blocking containers. The reward decreases by one for each reshuffle necessitated by the agents stowage plan.*
 
-
-Note that since the mathematical model disregards any stability constraints, the env automatically swaps the column order in a lexocographic manor, based on the containers in the columns. This reduces the state space, by a factor of almost $C!$. Furthmore, the transportation matrix, is reshifted up and to the left, for each port, to reduce the state space even further.
+Note that since the mathematical model disregards any stability constraints, the env automatically swaps the column order in a lexocographic manor, based on the containers in the columns. This reduces the state space, by a factor of almost $C!$. Furthmore, the transportation matrix, is reshifted up and to the left, for each port, to reduce the state space even further. This means that from the point of view of the agent, it never leaves the first port.
 
 When using the environment, you should call `env.close()` before exiting your program, to avoid memory leaks.
 
