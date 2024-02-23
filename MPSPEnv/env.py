@@ -82,6 +82,7 @@ class Env(gym.Env):
             is_terminal = bool(step_info.is_terminal)
 
         self.total_reward += reward
+        self.steps += 1
 
         return (
             self._get_observation(),
@@ -129,6 +130,7 @@ class Env(gym.Env):
     def reset(self, seed: int = None, options=None):
         self._reset_random_c_env(seed)
         self.total_reward = 0
+        self.steps = 0
 
         if self.take_first_action:
             self.step(0)
@@ -240,3 +242,27 @@ class Env(gym.Env):
         self._one_hot_bay = np.ctypeslib.as_array(
             self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
         )
+
+    def _overwride(self, old, new):
+        old[...] = new
+
+    def copy(self):
+        new_env = Env(
+            self.R,
+            self.C,
+            self.N,
+            self.skip_last_port,
+            self.take_first_action,
+            self.strict_mask,
+        )
+        new_env.reset()
+        new_env._bay[...] = self._bay
+        new_env._T[...] = self._T
+        new_env._mask[...] = self._mask
+        new_env._flat_T[...] = self._flat_T
+        new_env._one_hot_bay[...] = self._one_hot_bay
+        new_env.total_reward = self.total_reward
+        new_env.steps = self.steps
+        new_env.action_probs = self.action_probs
+
+        return new_env
