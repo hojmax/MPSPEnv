@@ -182,7 +182,10 @@ class Env(gym.Env):
         return self._get_observation(), {}
 
     def _get_observation(self):
-        return {"one_hot_bay": self.one_hot_bay, "flat_T": self.flat_T}
+        return {
+            "one_hot_bay": self.one_hot_bay,
+            "flat_T": self.flat_T / (self.R * self.C),  # Normalize to [0, 1]
+        }
 
     def action_masks(self):
         return self._mask.copy()
@@ -224,6 +227,14 @@ class Env(gym.Env):
             )
             self.close()
 
+    def __hash__(self):
+        return hash(self.bay.tobytes() + self.flat_T.tobytes())
+
+    def __eq__(self, other):
+        return np.array_equal(self.bay, other.bay) and np.array_equal(
+            self.flat_T, other.flat_T
+        )
+
     def _set_numpy_views(self):
         # The following numpy arrays are views of the underlying C arrays
         # You should always .copy() them before using them
@@ -242,9 +253,6 @@ class Env(gym.Env):
         self._one_hot_bay = np.ctypeslib.as_array(
             self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
         )
-
-    def _overwride(self, old, new):
-        old[...] = new
 
     def copy(self):
         new_env = Env(
