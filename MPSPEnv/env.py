@@ -74,12 +74,11 @@ class Env(gym.Env):
             ), f"The action {action} is not allowed. The mask is {self._mask}"
 
         reward = -10
-        is_terminal = False
 
         if self._mask[action] == 1:
             step_info = c_lib.step(self._env, action)
             reward = step_info.reward
-            is_terminal = bool(step_info.is_terminal)
+            self.terminal = bool(step_info.is_terminal)
 
         self.total_reward += reward
         self.steps += 1
@@ -87,7 +86,7 @@ class Env(gym.Env):
         return (
             self._get_observation(),
             reward,
-            is_terminal,
+            self.terminal,
             False,
             {},
         )
@@ -131,6 +130,7 @@ class Env(gym.Env):
         self._reset_random_c_env(seed)
         self.total_reward = 0
         self.steps = 0
+        self.terminal = False
 
         if self.take_first_action:
             self.step(0)
