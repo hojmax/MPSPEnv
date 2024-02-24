@@ -54,6 +54,17 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port)
     return env;
 }
 
+Env copy_env(Env env)
+{
+    Env copy;
+    copy.bay = copy_bay(env.bay);
+    copy.T = copy_transportation_info(env.T);
+    copy.skip_last_port = env.skip_last_port;
+    copy.flat_T_matrix = copy_array(env.flat_T_matrix);
+    copy.one_hot_bay = copy_array(env.one_hot_bay);
+    return copy;
+}
+
 void insert_one_hot_bay(Env env)
 {
     int index = 0;

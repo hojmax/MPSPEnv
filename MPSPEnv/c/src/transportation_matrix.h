@@ -22,6 +22,8 @@ Transportation_Info *get_specific_transportation_matrix(
     int N,
     int *T_matrix);
 
+Transportation_Info *copy_transportation_info(Transportation_Info *T);
+
 int is_last_port(Transportation_Info *T);
 
 void free_transportation_matrix(Transportation_Info *T);

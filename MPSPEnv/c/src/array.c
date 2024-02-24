@@ -19,6 +19,18 @@ void print_array(Array array)
     printf("\n");
 }
 
+Array copy_array(Array array)
+{
+    Array copy;
+    copy.values = (int *)calloc(array.n, sizeof(int));
+    copy.n = array.n;
+    for (int i = 0; i < array.n; i++)
+    {
+        copy.values[i] = array.values[i];
+    }
+    return copy;
+}
+
 void print_matrix(Array array, int w, int h)
 {
     assert(array.n == w * h);

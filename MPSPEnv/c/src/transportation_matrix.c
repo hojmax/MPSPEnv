@@ -174,6 +174,18 @@ int transportation_pop_container(Transportation_Info *T)
     return container;
 }
 
+Transportation_Info *copy_transportation_info(Transportation_Info *T)
+{
+    Transportation_Info *copy = malloc(sizeof(Transportation_Info));
+    copy->N = T->N;
+    copy->seed = T->seed;
+    copy->matrix = copy_array(T->matrix);
+    copy->containers_per_port = copy_array(T->containers_per_port);
+    copy->last_non_zero_column = T->last_non_zero_column;
+    copy->current_port = T->current_port;
+    return copy;
+}
+
 Transportation_Info *get_empty_transportation_matrix(
     int N)
 {

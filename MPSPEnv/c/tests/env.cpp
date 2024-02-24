@@ -133,3 +133,29 @@ TEST(env, skip_last_port2)
     CHECK(step_info.is_terminal == 1);
     free_env(env);
 }
+
+TEST(env, copy_env)
+{
+    Env env = get_random_env(3, 2, 4, 0);
+    Env copy = copy_env(env);
+
+    test_array_equals(env.bay.matrix, copy.bay.matrix);
+    test_array_equals(env.bay.min_container_per_column, copy.bay.min_container_per_column);
+    test_array_equals(env.bay.column_counts, copy.bay.column_counts);
+    test_array_equals(env.bay.mask, copy.bay.mask);
+    test_array_equals(env.T->matrix, copy.T->matrix);
+    test_array_equals(env.flat_T_matrix, copy.flat_T_matrix);
+    test_array_equals(env.one_hot_bay, copy.one_hot_bay);
+    test_array_equals(env.T->containers_per_port, copy.T->containers_per_port);
+    CHECK(env.T->seed == copy.T->seed);
+    CHECK(env.T->last_non_zero_column == copy.T->last_non_zero_column);
+    CHECK(env.T->current_port == copy.T->current_port);
+    CHECK(env.T->N == copy.T->N);
+    CHECK(env.skip_last_port == copy.skip_last_port);
+    CHECK(env.bay.C == copy.bay.C);
+    CHECK(env.bay.R == copy.bay.R);
+    CHECK(env.bay.N == copy.bay.N);
+
+    free_env(env);
+    free_env(copy);
+}

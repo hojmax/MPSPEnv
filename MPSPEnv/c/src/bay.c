@@ -18,6 +18,19 @@ int is_full_column(Bay bay, int column)
     return containers_in_column(bay, column) == bay.R;
 }
 
+Bay copy_bay(Bay bay)
+{
+    Bay copy;
+    copy.R = bay.R;
+    copy.C = bay.C;
+    copy.N = bay.N;
+    copy.matrix = copy_array(bay.matrix);
+    copy.min_container_per_column = copy_array(bay.min_container_per_column);
+    copy.column_counts = copy_array(bay.column_counts);
+    copy.mask = copy_array(bay.mask);
+    return copy;
+}
+
 void update_column_mask(Bay bay, int column)
 {
     // Add mask

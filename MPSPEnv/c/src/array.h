@@ -23,6 +23,8 @@ void print_matrix(Array array, int w, int h);
 
 Array array_from_ints(int *values, int n);
 
+Array copy_array(Array array);
+
 Array array_from_ints_shallow_copy(int *values, int n);
 
 void reorder_array(Array array, Array order);

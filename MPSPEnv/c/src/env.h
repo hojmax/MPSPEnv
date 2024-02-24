@@ -21,6 +21,8 @@ typedef struct StepInfo
 
 StepInfo step(Env env, int action);
 
+Env copy_env(Env env);
+
 Env get_random_env(int R, int C, int N, int skip_last_port);
 
 Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port);
