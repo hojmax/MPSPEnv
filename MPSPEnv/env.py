@@ -81,7 +81,11 @@ class Env(gym.Env):
             self.terminal = bool(step_info.is_terminal)
 
         self.total_reward += reward
-        self.steps += 1
+        if action < self.C:
+            self.containers_placed += 1
+
+        if self.terminal:
+            self.containers_left = np.sum(self.flat_T)
 
         return (
             self._get_observation(),
@@ -129,8 +133,9 @@ class Env(gym.Env):
     def reset(self, seed: int = None, options=None):
         self._reset_random_c_env(seed)
         self.total_reward = 0
-        self.steps = 0
+        self.containers_placed = 0
         self.terminal = False
+        self.containers_left = None
 
         if self.take_first_action:
             self.step(0)
@@ -263,14 +268,12 @@ class Env(gym.Env):
             self.take_first_action,
             self.strict_mask,
         )
-        new_env.reset()
-        new_env._bay[...] = self._bay
-        new_env._T[...] = self._T
-        new_env._mask[...] = self._mask
-        new_env._flat_T[...] = self._flat_T
-        new_env._one_hot_bay[...] = self._one_hot_bay
+        new_env._env = c_lib.copy_env(self._env)
+        new_env._set_numpy_views()
         new_env.total_reward = self.total_reward
-        new_env.steps = self.steps
+        new_env.containers_placed = self.containers_placed
+        new_env.containers_left = self.containers_left
         new_env.action_probs = self.action_probs
+        new_env.terminal = self.terminal
 
         return new_env

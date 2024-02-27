@@ -74,3 +74,6 @@ c_lib.free_env.argtypes = [Env]
 c_lib.set_random_seed.argtypes = []
 
 c_lib.set_seed.argtypes = [c_int]
+
+c_lib.copy_env.argtypes = [Env]
+c_lib.copy_env.restype = Env
