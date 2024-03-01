@@ -101,8 +101,6 @@ class Env(gym.Env):
 
         if seed is not None:
             c_lib.set_seed(seed)
-        else:
-            c_lib.set_random_seed()
 
         self._env = c_lib.get_random_env(
             self.R, self.C, self.N, int(self.skip_last_port)

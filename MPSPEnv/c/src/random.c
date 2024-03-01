@@ -52,6 +52,18 @@ void swap(int *a, int *b)
     *b = temp;
 }
 
+void shuffle(int *array, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        int j = random_uniform_int(i, n);
+        if (i != j)
+        {
+            swap(&array[i], &array[j]);
+        }
+    }
+}
+
 // v is randomly partitioned into b integers
 int *random_partition(int v, int b)
 {
@@ -85,6 +97,8 @@ int *random_partition(int v, int b)
         x[i] = y[i] - y[i - 1] - 1;
     }
     x[b - 1] = v + b - 1 - y[b - 2];
+
+    shuffle(x, b);
 
     free(y);
     return x;
