@@ -65,7 +65,7 @@ class Env(gym.Env):
         )
 
     @property
-    def value(self):
+    def moves_to_solve(self):
         return self.containers_placed + self.containers_left
 
     def step(self, action: int):
@@ -85,6 +85,7 @@ class Env(gym.Env):
             self.terminal = bool(step_info.is_terminal)
 
         self.total_reward += reward
+
         if action < self.C:
             self.containers_placed += 1
 
@@ -137,6 +138,7 @@ class Env(gym.Env):
         self.containers_placed = 0
         self.terminal = False
         self.containers_left = np.sum(self.flat_T)
+        self.action_probs = None
 
         if self.take_first_action:
             self.step(0)
