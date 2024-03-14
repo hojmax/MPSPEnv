@@ -64,6 +64,10 @@ class Env(gym.Env):
             }
         )
 
+    @property
+    def value(self):
+        return self.containers_placed + self.containers_left
+
     def step(self, action: int):
         assert (
             0 <= action < 2 * self.C
@@ -84,8 +88,7 @@ class Env(gym.Env):
         if action < self.C:
             self.containers_placed += 1
 
-        if self.terminal:
-            self.containers_left = np.sum(self.flat_T)
+        self.containers_left = np.sum(self.flat_T)
 
         return (
             self._get_observation(),
@@ -133,7 +136,7 @@ class Env(gym.Env):
         self.total_reward = 0
         self.containers_placed = 0
         self.terminal = False
-        self.containers_left = None
+        self.containers_left = np.sum(self.flat_T)
 
         if self.take_first_action:
             self.step(0)
