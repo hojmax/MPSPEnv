@@ -132,13 +132,16 @@ class Env(gym.Env):
             self.bay, self.T, self.total_reward, self.action_probs
         )
 
-    def reset(self, seed: int = None, options=None):
-        self._reset_random_c_env(seed)
+    def _reset_constants(self):
         self.total_reward = 0
         self.containers_placed = 0
         self.terminal = False
         self.containers_left = np.sum(self.flat_T)
         self.action_probs = None
+
+    def reset(self, seed: int = None, options=None):
+        self._reset_random_c_env(seed)
+        self._reset_constants()
 
         if self.take_first_action:
             self.step(0)
@@ -182,7 +185,7 @@ class Env(gym.Env):
     def reset_to_transportation(self, transportation: np.ndarray):
         self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
-        self.total_reward = 0
+        self._reset_constants()
 
         if self.take_first_action:
             self.step(0)
