@@ -1,10 +1,17 @@
+#define _GNU_SOURCE
 #include "array.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+// Define a comparison function that matches the expected signature for both versions
+#ifdef __GLIBC__
+int compare_indexes_using_values(const void *a, const void *b, void *values)
+{
+#else
 int compare_indexes_using_values(void *values, const void *a, const void *b)
 {
+#endif
     int *values_array = (int *)values;
     int index_a = *(int *)a;
     int index_b = *(int *)b;
@@ -22,5 +29,9 @@ int compare_indexes_using_values(void *values, const void *a, const void *b)
 void sort_indexes_using_values(Array indexes, Array values)
 {
     assert(indexes.n == values.n);
+#ifdef __GLIBC__
+    qsort_r(indexes.values, indexes.n, sizeof(int), compare_indexes_using_values, values.values);
+#else
     qsort_r(indexes.values, indexes.n, sizeof(int), values.values, compare_indexes_using_values);
+#endif
 }

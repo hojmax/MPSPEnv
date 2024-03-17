@@ -30,7 +30,7 @@ build: $(BUILD_OBJS)
 
 # Rule to make object files for final build
 %_build.o: %.c %.h
-	@gcc -c -O3 -DNDEBUG $< -o $@
+	@gcc -fPIC -c -O3 -DNDEBUG $< -o $@
 
 # Generate Coverage Report
 coverage:
