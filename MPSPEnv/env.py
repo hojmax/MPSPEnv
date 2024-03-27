@@ -283,6 +283,3 @@ class Env(gym.Env):
         new_env.terminal = self.terminal
 
         return new_env
-
-    def __del__(self):
-        self.close()
