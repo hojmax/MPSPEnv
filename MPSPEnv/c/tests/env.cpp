@@ -34,24 +34,24 @@ TEST(env, blocking)
     Env env = get_specific_env(R, C, N, T_matrix, 0);
     StepInfo step_info;
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
 
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
 
     step_info = step(env, 5);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == -1);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, -1);
 
     step_info = step(env, 2);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == -1);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, -1);
 
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
     int expected_T_matrix[] = {
         0, 0, 1, 0, 0, 0,
         0, 0, 1, 1, 0, 0,
@@ -68,16 +68,16 @@ TEST(env, blocking)
     test_array_compare(env.bay.matrix, expected_bay_matrix);
 
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
 
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
 
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 1);
-    CHECK(step_info.reward == 0);
+    CHECK_EQUAL(step_info.is_terminal, 1);
+    CHECK_EQUAL(step_info.reward, 0);
     free_env(env);
 }
 
@@ -125,11 +125,17 @@ TEST(env, skip_last_port2)
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 1);
     StepInfo step_info;
+    CHECK(env.T->current_port == 0);
     step_info = step(env, 0);
+    CHECK(env.T->current_port == 0);
     step_info = step(env, 0);
+    CHECK(env.T->current_port == 0);
     step_info = step(env, 0);
+    CHECK(env.T->current_port == 3);
     step_info = step(env, 0);
+    CHECK(env.T->current_port == 3);
     step_info = step(env, 0);
+    CHECK(env.T->current_port == 4);
     CHECK(step_info.is_terminal == 1);
     free_env(env);
 }

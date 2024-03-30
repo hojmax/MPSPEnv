@@ -68,6 +68,10 @@ class Env(gym.Env):
     def moves_to_solve(self):
         return self.containers_placed + self.containers_left
 
+    @property
+    def remaining_ports(self):
+        return self.N - 1 - self._env.T.contents.current_port
+
     def step(self, action: int):
         assert (
             0 <= action < 2 * self.C
