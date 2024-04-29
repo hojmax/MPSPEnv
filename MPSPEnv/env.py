@@ -82,17 +82,19 @@ class Env(gym.Env):
         return self.N - 1 - self._env.T.contents.current_port
 
     def step(self, action: int):
+        self.ensure_mask()
+        self.ensure_flat_T()
         assert (
             0 <= action < 2 * self.C
         ), f"Action must be in the range [0, 2C). The first C actions correspond to adding a container into the respective column, the last C actions correspond to removing a container from the respective column."
         if self.strict_mask:
             assert (
-                self.mask[action] == 1
-            ), f"The action {action} is not allowed. The mask is {self.mask}"
+                self._mask[action] == 1
+            ), f"The action {action} is not allowed. The mask is {self._mask}"
 
         reward = -10
 
-        if self.mask[action] == 1:
+        if self._mask[action] == 1:
             step_info = c_lib.step(self._env, action)
             reward = step_info.reward
             self.terminal = bool(step_info.is_terminal)
@@ -102,7 +104,7 @@ class Env(gym.Env):
         if action < self.C:
             self.containers_placed += 1
 
-        self.containers_left = np.sum(self.flat_T)
+        self.containers_left = np.sum(self._flat_T)
 
         return (
             self._get_observation(),
@@ -144,10 +146,11 @@ class Env(gym.Env):
         )
 
     def _reset_constants(self):
+        self.ensure_flat_T()
         self.total_reward = 0
         self.containers_placed = 0
         self.terminal = False
-        self.containers_left = np.sum(self.flat_T)
+        self.containers_left = np.sum(self._flat_T)
         self.action_probs = None
 
     def reset(self, seed: int = None, options=None):
@@ -212,49 +215,59 @@ class Env(gym.Env):
     def action_masks(self):
         return self.mask
 
-    @property
-    def bay(self):
+    def ensure_bay(self):
         if self._bay is None:
             self._bay = np.ctypeslib.as_array(
                 self._env.bay.matrix.values, shape=(self.R, self.C)
             )
 
+    @property
+    def bay(self):
+        self.ensure_bay()
         return self._bay.copy()
 
-    @property
-    def one_hot_bay(self):
+    def ensure_one_hot_bay(self):
         if self._one_hot_bay is None:
             self._one_hot_bay = np.ctypeslib.as_array(
                 self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
             )
 
+    @property
+    def one_hot_bay(self):
+        self.ensure_one_hot_bay()
         return self._one_hot_bay.copy()
 
-    @property
-    def T(self):
+    def ensure_T(self):
         if self._T is None:
             self._T = np.ctypeslib.as_array(
                 self._env.T.contents.matrix.values, shape=(self.N, self.N)
             )
 
+    @property
+    def T(self):
+        self.ensure_T()
         return self._T.copy()
 
-    @property
-    def flat_T(self):
+    def ensure_flat_T(self):
         if self._flat_T is None:
             self._flat_T = np.ctypeslib.as_array(
                 self._env.flat_T_matrix.values, shape=((self.N - 1) * self.N // 2,)
             )
 
+    @property
+    def flat_T(self):
+        self.ensure_flat_T()
         return self._flat_T.copy()
 
-    @property
-    def mask(self):
+    def ensure_mask(self):
         if self._mask is None:
             self._mask = np.ctypeslib.as_array(
                 self._env.bay.mask.values, shape=(2 * self.C,)
             )
 
+    @property
+    def mask(self):
+        self.ensure_mask()
         return self._mask.copy()
 
     def print(self):
@@ -279,11 +292,17 @@ class Env(gym.Env):
             self.close()
 
     def __hash__(self):
-        return hash(self.bay.tobytes() + self.flat_T.tobytes())
+        self.ensure_bay()
+        self.ensure_flat_T()
+        return hash(self._bay.tobytes() + self._flat_T.tobytes())
 
-    def __eq__(self, other):
-        return np.array_equal(self.bay, other.bay) and np.array_equal(
-            self.flat_T, other.flat_T
+    def __eq__(self, other: "Env"):
+        self.ensure_bay()
+        self.ensure_flat_T()
+        other.ensure_bay()
+        other.ensure_flat_T()
+        return np.array_equal(self._bay, other._bay) and np.array_equal(
+            self._flat_T, other._flat_T
         )
 
     def copy(self):
