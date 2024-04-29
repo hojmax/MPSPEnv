@@ -42,10 +42,16 @@ class Env(gym.Env):
         self.skip_last_port = skip_last_port
         self.take_first_action = take_first_action
         self.strict_mask = strict_mask
+        self.speedy = speedy
         self.action_probs = None
         self.total_reward = 0
+        self._bay = None
+        self._T = None
+        self._mask = None
+        self._flat_T = None
+        self._one_hot_bay = None
 
-        if not speedy:
+        if not self.speedy:
             self._set_gym_interface()
 
     def _set_gym_interface(self):
@@ -81,12 +87,12 @@ class Env(gym.Env):
         ), f"Action must be in the range [0, 2C). The first C actions correspond to adding a container into the respective column, the last C actions correspond to removing a container from the respective column."
         if self.strict_mask:
             assert (
-                self._mask[action] == 1
-            ), f"The action {action} is not allowed. The mask is {self._mask}"
+                self.mask[action] == 1
+            ), f"The action {action} is not allowed. The mask is {self.mask}"
 
         reward = -10
 
-        if self._mask[action] == 1:
+        if self.mask[action] == 1:
             step_info = c_lib.step(self._env, action)
             reward = step_info.reward
             self.terminal = bool(step_info.is_terminal)
@@ -116,7 +122,6 @@ class Env(gym.Env):
         self._env = c_lib.get_random_env(
             self.R, self.C, self.N, int(self.skip_last_port)
         )
-        self._set_numpy_views()
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
         if self._env is not None:
@@ -129,7 +134,6 @@ class Env(gym.Env):
             transportation.ctypes.data_as(POINTER(c_int)),
             int(self.skip_last_port),
         )
-        self._set_numpy_views()
 
     def render(self):
         if self.visualizer == None:
@@ -206,31 +210,60 @@ class Env(gym.Env):
         }
 
     def action_masks(self):
-        return self._mask.copy()
+        return self.mask
 
     @property
     def bay(self):
+        if self._bay is None:
+            self._bay = np.ctypeslib.as_array(
+                self._env.bay.matrix.values, shape=(self.R, self.C)
+            )
+
         return self._bay.copy()
 
     @property
     def one_hot_bay(self):
+        if self._one_hot_bay is None:
+            self._one_hot_bay = np.ctypeslib.as_array(
+                self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
+            )
+
         return self._one_hot_bay.copy()
 
     @property
     def T(self):
+        if self._T is None:
+            self._T = np.ctypeslib.as_array(
+                self._env.T.contents.matrix.values, shape=(self.N, self.N)
+            )
+
         return self._T.copy()
 
     @property
     def flat_T(self):
+        if self._flat_T is None:
+            self._flat_T = np.ctypeslib.as_array(
+                self._env.flat_T_matrix.values, shape=((self.N - 1) * self.N // 2,)
+            )
+
         return self._flat_T.copy()
+
+    @property
+    def mask(self):
+        if self._mask is None:
+            self._mask = np.ctypeslib.as_array(
+                self._env.bay.mask.values, shape=(2 * self.C,)
+            )
+
+        return self._mask.copy()
 
     def print(self):
         print("Bay:")
-        print(self._bay)
+        print(self.bay)
         print("T:")
-        print(self._T)
+        print(self.T)
         print("Mask:")
-        print(self._mask)
+        print(self.mask)
         print()
 
     def close(self):
@@ -253,25 +286,6 @@ class Env(gym.Env):
             self.flat_T, other.flat_T
         )
 
-    def _set_numpy_views(self):
-        # The following numpy arrays are views of the underlying C arrays
-        # You should always .copy() them before using them
-        self._bay = np.ctypeslib.as_array(
-            self._env.bay.matrix.values, shape=(self.R, self.C)
-        )
-        self._T = np.ctypeslib.as_array(
-            self._env.T.contents.matrix.values, shape=(self.N, self.N)
-        )
-        self._mask = np.ctypeslib.as_array(
-            self._env.bay.mask.values, shape=(2 * self.C,)
-        )
-        self._flat_T = np.ctypeslib.as_array(
-            self._env.flat_T_matrix.values, shape=((self.N - 1) * self.N // 2,)
-        )
-        self._one_hot_bay = np.ctypeslib.as_array(
-            self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
-        )
-
     def copy(self):
         new_env = Env(
             self.R,
@@ -280,9 +294,9 @@ class Env(gym.Env):
             self.skip_last_port,
             self.take_first_action,
             self.strict_mask,
+            self.speedy,
         )
         new_env._env = c_lib.copy_env(self._env)
-        new_env._set_numpy_views()
         new_env.total_reward = self.total_reward
         new_env.containers_placed = self.containers_placed
         new_env.containers_left = self.containers_left
