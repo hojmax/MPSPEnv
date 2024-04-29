@@ -17,6 +17,7 @@ class Env(gym.Env):
     - skip_last_port: whether to terminate episodes at the second to last port (default: False)
     - take_first_action: whether to automaticlly place the first container of every episode (default: False)
     - strict_mask: whether to break when an invalid action is taken. Otherwise a penalty of -10 is given (default: False)
+    - speedy: whether to skip the gym interface (default: False)
     """
 
     def __init__(
@@ -27,6 +28,7 @@ class Env(gym.Env):
         skip_last_port: bool = False,
         take_first_action: bool = False,
         strict_mask: bool = False,
+        speedy: bool = False,
     ):
         super().__init__()
         assert R > 0, f"R must be positive but was {R}"
@@ -43,7 +45,8 @@ class Env(gym.Env):
         self.action_probs = None
         self.total_reward = 0
 
-        self._set_gym_interface()
+        if not speedy:
+            self._set_gym_interface()
 
     def _set_gym_interface(self):
         self.render_mode = "human"
