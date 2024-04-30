@@ -67,17 +67,6 @@ class Env(gym.Env):
         self.speedy = speedy
         self.action_probs = None
         self.total_reward = 0
-        self.bay_store = LazyNdarray(self._env, ["bay", "matrix"], (self.R, self.C))
-        self.T_store = LazyNdarray(
-            self._env, ["T", "contents", "matrix"], (self.N, self.N)
-        )
-        self.mask_store = LazyNdarray(self._env, ["bay", "mask"], (2 * self.C,))
-        self.one_hot_bay_store = LazyNdarray(
-            self._env, ["one_hot_bay"], (self.N - 1, self.R, self.C)
-        )
-        self.flat_T_store = LazyNdarray(
-            self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
-        )
 
         if not self.speedy:
             self._set_gym_interface()
@@ -138,6 +127,7 @@ class Env(gym.Env):
 
     def reset(self, seed: int = None, options=None):
         self._reset_random_c_env(seed)
+        self._set_stores()
         self._reset_constants()
 
         if self.take_first_action:
@@ -151,12 +141,16 @@ class Env(gym.Env):
     def reset_to_transportation(self, transportation: np.ndarray):
         self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
+        self._set_stores()
         self._reset_constants()
 
         if self.take_first_action:
             self.step(0)
 
-        return self._get_observation(), {}
+        if not self.speedy:
+            return self._get_observation(), {}
+        else:
+            return None
 
     def render(self):
         if self.visualizer == None:
@@ -201,6 +195,19 @@ class Env(gym.Env):
 
     def action_masks(self):
         return self.mask
+
+    def _set_stores(self):
+        self.bay_store = LazyNdarray(self._env, ["bay", "matrix"], (self.R, self.C))
+        self.T_store = LazyNdarray(
+            self._env, ["T", "contents", "matrix"], (self.N, self.N)
+        )
+        self.mask_store = LazyNdarray(self._env, ["bay", "mask"], (2 * self.C,))
+        self.one_hot_bay_store = LazyNdarray(
+            self._env, ["one_hot_bay"], (self.N - 1, self.R, self.C)
+        )
+        self.flat_T_store = LazyNdarray(
+            self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
+        )
 
     def _reset_constants(self):
         self.total_reward = 0
