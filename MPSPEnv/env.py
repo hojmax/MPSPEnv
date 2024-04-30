@@ -1,10 +1,32 @@
-from MPSPEnv.c_interface import c_lib
+from MPSPEnv.c_interface import c_lib, Env as c_Env
 import numpy as np
 from gymnasium import spaces
 import gymnasium as gym
 from MPSPEnv.visualizer import Visualizer
 import warnings
 from ctypes import POINTER, c_int
+
+
+class LazyNdarray:
+    def __init__(self, env: c_Env, attributes: list[str], shape: tuple[int, int]):
+        self.env = env
+        self.attributes = attributes
+        self.shape = shape
+        self.store = None
+
+    @property
+    def ndarray(self):
+        if self.store is None:
+            self._build_store()
+
+        return self.store
+
+    def _build_store(self):
+        self.store = self.env
+        for attr in self.attributes:
+            self.store = getattr(self.store, attr)
+
+        self.store = np.ctypeslib.as_array(self.store.values, shape=self.shape)
 
 
 class Env(gym.Env):
@@ -17,7 +39,7 @@ class Env(gym.Env):
     - skip_last_port: whether to terminate episodes at the second to last port (default: False)
     - take_first_action: whether to automaticlly place the first container of every episode (default: False)
     - strict_mask: whether to break when an invalid action is taken. Otherwise a penalty of -10 is given (default: False)
-    - speedy: whether to skip the gym interface (default: False)
+    - speedy: whether to skip the gym interface and return observations as None (default: False)
     """
 
     def __init__(
@@ -45,56 +67,34 @@ class Env(gym.Env):
         self.speedy = speedy
         self.action_probs = None
         self.total_reward = 0
-        self._bay = None
-        self._T = None
-        self._mask = None
-        self._flat_T = None
-        self._one_hot_bay = None
+        self.bay_store = LazyNdarray(self._env, ["bay", "matrix"], (self.R, self.C))
+        self.T_store = LazyNdarray(
+            self._env, ["T", "contents", "matrix"], (self.N, self.N)
+        )
+        self.mask_store = LazyNdarray(self._env, ["bay", "mask"], (2 * self.C,))
+        self.one_hot_bay_store = LazyNdarray(
+            self._env, ["one_hot_bay"], (self.N - 1, self.R, self.C)
+        )
+        self.flat_T_store = LazyNdarray(
+            self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
+        )
 
         if not self.speedy:
             self._set_gym_interface()
 
-    def _set_gym_interface(self):
-        self.render_mode = "human"
-        self.action_space = spaces.Discrete(2 * self.C)
-        one_hot_bay_def = spaces.Box(
-            low=0, high=1, shape=(self.N - 1, self.R, self.C), dtype=np.int32
-        )
-        flat_T__def = spaces.Box(
-            low=0,
-            high=self.R * self.C,
-            shape=(self.N * (self.N - 1) // 2,),
-            dtype=np.int32,
-        )
-        self.observation_space = spaces.Dict(
-            {
-                "one_hot_bay": one_hot_bay_def,
-                "flat_T": flat_T__def,
-            }
-        )
-
-    @property
-    def moves_to_solve(self):
-        return self.containers_placed + self.containers_left
-
-    @property
-    def remaining_ports(self):
-        return self.N - 1 - self._env.T.contents.current_port
-
     def step(self, action: int):
-        self.ensure_mask()
-        self.ensure_flat_T()
+        assert self._env is not None, "The environment must be reset before stepping."
         assert (
             0 <= action < 2 * self.C
         ), f"Action must be in the range [0, 2C). The first C actions correspond to adding a container into the respective column, the last C actions correspond to removing a container from the respective column."
         if self.strict_mask:
             assert (
-                self._mask[action] == 1
-            ), f"The action {action} is not allowed. The mask is {self._mask}"
+                self.mask_store.ndarray[action] == 1
+            ), f"The action {action} is not allowed. The mask is {self.mask_store.ndarray}"
 
         reward = -10
 
-        if self._mask[action] == 1:
+        if self.mask_store.ndarray[action] == 1:
             step_info = c_lib.step(self._env, action)
             reward = step_info.reward
             self.terminal = bool(step_info.is_terminal)
@@ -104,38 +104,59 @@ class Env(gym.Env):
         if action < self.C:
             self.containers_placed += 1
 
-        self.containers_left = np.sum(self._flat_T)
+        self.containers_left = np.sum(self.flat_T_store.ndarray)
 
-        return (
-            self._get_observation(),
-            reward,
-            self.terminal,
-            False,
-            {},
-        )
+        if not self.speedy:
+            return (
+                self._get_observation(),
+                reward,
+                self.terminal,
+                False,
+                {},
+            )
+        else:
+            return None
 
-    def _reset_random_c_env(self, seed: int = None):
-        if self._env is not None:
-            c_lib.free_env(self._env)
-
-        if seed is not None:
-            c_lib.set_seed(seed)
-
-        self._env = c_lib.get_random_env(
-            self.R, self.C, self.N, int(self.skip_last_port)
-        )
-
-    def _reset_specific_c_env(self, transportation: np.ndarray):
-        if self._env is not None:
-            c_lib.free_env(self._env)
-
-        self._env = c_lib.get_specific_env(
+    def copy(self):
+        new_env = Env(
             self.R,
             self.C,
             self.N,
-            transportation.ctypes.data_as(POINTER(c_int)),
-            int(self.skip_last_port),
+            self.skip_last_port,
+            self.take_first_action,
+            self.strict_mask,
+            self.speedy,
         )
+        new_env._env = c_lib.copy_env(self._env)
+        new_env.total_reward = self.total_reward
+        new_env.containers_placed = self.containers_placed
+        new_env.containers_left = self.containers_left
+        new_env.action_probs = self.action_probs
+        new_env.terminal = self.terminal
+
+        return new_env
+
+    def reset(self, seed: int = None, options=None):
+        self._reset_random_c_env(seed)
+        self._reset_constants()
+
+        if self.take_first_action:
+            self.step(0)
+
+        if not self.speedy:
+            return self._get_observation(), {}
+        else:
+            return None
+
+    def reset_to_transportation(self, transportation: np.ndarray):
+        self._assert_transportation(transportation)
+        self._reset_specific_c_env(transportation)
+        self._reset_constants()
+
+        if self.take_first_action:
+            self.step(0)
+
+        return self._get_observation(), {}
 
     def render(self):
         if self.visualizer == None:
@@ -145,22 +166,48 @@ class Env(gym.Env):
             self.bay, self.T, self.total_reward, self.action_probs
         )
 
+    def close(self):
+        if self._env is not None:
+            c_lib.free_env(self._env)
+            self._env = None
+
+    @property
+    def moves_to_solve(self):
+        return self.containers_placed + self.containers_left
+
+    @property
+    def remaining_ports(self):
+        return self.N - 1 - self._env.T.contents.current_port
+
+    @property
+    def bay(self):
+        return self.bay_store.ndarray.copy()
+
+    @property
+    def one_hot_bay(self):
+        return self.one_hot_bay_store.ndarray.copy()
+
+    @property
+    def T(self):
+        return self.T_store.ndarray.copy()
+
+    @property
+    def flat_T(self):
+        return self.flat_T_store.ndarray.copy()
+
+    @property
+    def mask(self):
+        return self.mask_store.ndarray.copy()
+
+    def action_masks(self):
+        return self.mask
+
     def _reset_constants(self):
-        self.ensure_flat_T()
         self.total_reward = 0
         self.containers_placed = 0
         self.terminal = False
-        self.containers_left = np.sum(self._flat_T)
+        self.containers_left = np.sum(self.flat_T_store.ndarray)
         self.action_probs = None
-
-    def reset(self, seed: int = None, options=None):
-        self._reset_random_c_env(seed)
-        self._reset_constants()
-
-        if self.take_first_action:
-            self.step(0)
-
-        return self._get_observation(), {}
 
     def _assert_transportation(self, transportation: np.ndarray):
         assert (
@@ -196,93 +243,53 @@ class Env(gym.Env):
 
         return True
 
-    def reset_to_transportation(self, transportation: np.ndarray):
-        self._assert_transportation(transportation)
-        self._reset_specific_c_env(transportation)
-        self._reset_constants()
-
-        if self.take_first_action:
-            self.step(0)
-
-        return self._get_observation(), {}
-
     def _get_observation(self):
         return {
             "one_hot_bay": self.one_hot_bay,
             "flat_T": self.flat_T / (self.R * self.C),  # Normalize to [0, 1]
         }
 
-    def action_masks(self):
-        return self.mask
+    def _set_gym_interface(self):
+        self.render_mode = "human"
+        self.action_space = spaces.Discrete(2 * self.C)
+        one_hot_bay_def = spaces.Box(
+            low=0, high=1, shape=(self.N - 1, self.R, self.C), dtype=np.int32
+        )
+        flat_T_def = spaces.Box(
+            low=0,
+            high=self.R * self.C,
+            shape=(self.N * (self.N - 1) // 2,),
+            dtype=np.int32,
+        )
+        self.observation_space = spaces.Dict(
+            {
+                "one_hot_bay": one_hot_bay_def,
+                "flat_T": flat_T_def,
+            }
+        )
 
-    def ensure_bay(self):
-        if self._bay is None:
-            self._bay = np.ctypeslib.as_array(
-                self._env.bay.matrix.values, shape=(self.R, self.C)
-            )
-
-    @property
-    def bay(self):
-        self.ensure_bay()
-        return self._bay.copy()
-
-    def ensure_one_hot_bay(self):
-        if self._one_hot_bay is None:
-            self._one_hot_bay = np.ctypeslib.as_array(
-                self._env.one_hot_bay.values, shape=(self.N - 1, self.R, self.C)
-            )
-
-    @property
-    def one_hot_bay(self):
-        self.ensure_one_hot_bay()
-        return self._one_hot_bay.copy()
-
-    def ensure_T(self):
-        if self._T is None:
-            self._T = np.ctypeslib.as_array(
-                self._env.T.contents.matrix.values, shape=(self.N, self.N)
-            )
-
-    @property
-    def T(self):
-        self.ensure_T()
-        return self._T.copy()
-
-    def ensure_flat_T(self):
-        if self._flat_T is None:
-            self._flat_T = np.ctypeslib.as_array(
-                self._env.flat_T_matrix.values, shape=((self.N - 1) * self.N // 2,)
-            )
-
-    @property
-    def flat_T(self):
-        self.ensure_flat_T()
-        return self._flat_T.copy()
-
-    def ensure_mask(self):
-        if self._mask is None:
-            self._mask = np.ctypeslib.as_array(
-                self._env.bay.mask.values, shape=(2 * self.C,)
-            )
-
-    @property
-    def mask(self):
-        self.ensure_mask()
-        return self._mask.copy()
-
-    def print(self):
-        print("Bay:")
-        print(self.bay)
-        print("T:")
-        print(self.T)
-        print("Mask:")
-        print(self.mask)
-        print()
-
-    def close(self):
+    def _reset_random_c_env(self, seed: int = None):
         if self._env is not None:
             c_lib.free_env(self._env)
-            self._env = None
+
+        if seed is not None:
+            c_lib.set_seed(seed)
+
+        self._env = c_lib.get_random_env(
+            self.R, self.C, self.N, int(self.skip_last_port)
+        )
+
+    def _reset_specific_c_env(self, transportation: np.ndarray):
+        if self._env is not None:
+            c_lib.free_env(self._env)
+
+        self._env = c_lib.get_specific_env(
+            self.R,
+            self.C,
+            self.N,
+            transportation.ctypes.data_as(POINTER(c_int)),
+            int(self.skip_last_port),
+        )
 
     def __del__(self):
         if self._env is not None:
@@ -292,34 +299,11 @@ class Env(gym.Env):
             self.close()
 
     def __hash__(self):
-        self.ensure_bay()
-        self.ensure_flat_T()
-        return hash(self._bay.tobytes() + self._flat_T.tobytes())
+        return hash(
+            self.bay_store.ndarray.tobytes() + self.flat_T_store.ndarray.tobytes()
+        )
 
     def __eq__(self, other: "Env"):
-        self.ensure_bay()
-        self.ensure_flat_T()
-        other.ensure_bay()
-        other.ensure_flat_T()
-        return np.array_equal(self._bay, other._bay) and np.array_equal(
-            self._flat_T, other._flat_T
-        )
-
-    def copy(self):
-        new_env = Env(
-            self.R,
-            self.C,
-            self.N,
-            self.skip_last_port,
-            self.take_first_action,
-            self.strict_mask,
-            self.speedy,
-        )
-        new_env._env = c_lib.copy_env(self._env)
-        new_env.total_reward = self.total_reward
-        new_env.containers_placed = self.containers_placed
-        new_env.containers_left = self.containers_left
-        new_env.action_probs = self.action_probs
-        new_env.terminal = self.terminal
-
-        return new_env
+        return np.array_equal(
+            self.bay_store.ndarray, other.bay_store.ndarray
+        ) and np.array_equal(self.flat_T_store.ndarray, other.flat_T_store.ndarray)
