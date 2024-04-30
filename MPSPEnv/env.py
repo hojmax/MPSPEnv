@@ -122,6 +122,7 @@ class Env(gym.Env):
         new_env.containers_left = self.containers_left
         new_env.action_probs = self.action_probs
         new_env.terminal = self.terminal
+        new_env._set_stores()
 
         return new_env
 
