@@ -160,41 +160,41 @@ class Env(gym.Env):
             self._env = None
 
     @property
-    def moves_upper_bound(self):
+    def moves_upper_bound(self) -> int:
         return self._env.moves_upper_bound
 
     @property
-    def moves_to_solve(self):
+    def moves_to_solve(self) -> int:
         return (
             self._env.T.contents.containers_placed
             + self._env.T.contents.containers_left
         )
 
     @property
-    def remaining_ports(self):
+    def remaining_ports(self) -> int:
         return self.N - 1 - self._env.T.contents.current_port
 
     @property
-    def bay(self):
+    def bay(self) -> np.ndarray:
         return self.bay_store.ndarray.copy()
 
     @property
-    def one_hot_bay(self):
+    def one_hot_bay(self) -> np.ndarray:
         return self.one_hot_bay_store.ndarray.copy()
 
     @property
-    def T(self):
+    def T(self) -> np.ndarray:
         return self.T_store.ndarray.copy()
 
     @property
-    def flat_T(self):
+    def flat_T(self) -> np.ndarray:
         return self.flat_T_store.ndarray.copy()
 
     @property
-    def mask(self):
+    def mask(self) -> np.ndarray:
         return self.mask_store.ndarray.copy()
 
-    def action_masks(self):
+    def action_masks(self) -> np.ndarray:
         return self.mask
 
     def _set_stores(self):
