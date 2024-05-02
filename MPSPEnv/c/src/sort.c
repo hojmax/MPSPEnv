@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// Define a comparison function that matches the expected signature for both versions
 #ifdef __GLIBC__
 int compare_indexes_using_values(const void *a, const void *b, void *values)
 {
