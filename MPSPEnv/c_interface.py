@@ -31,6 +31,8 @@ class Transportation_Info(Structure):
         ("seed", c_int),
         ("last_non_zero_column", c_int),
         ("current_port", c_int),
+        ("containers_left", c_int),
+        ("containers_placed", c_int),
     ]
 
 
@@ -41,6 +43,7 @@ class Env(Structure):
         ("one_hot_bay", Array),
         ("flat_T_matrix", Array),
         ("skip_last_port", c_int),
+        ("moves_upper_bound", c_int),
     ]
 
 

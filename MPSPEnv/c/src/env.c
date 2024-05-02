@@ -1,5 +1,7 @@
 #include "env.h"
+#include "play.h"
 #include <assert.h>
+#include <stdio.h>
 
 void insert_flat_T_matrix(Env env)
 {
@@ -32,6 +34,7 @@ Env get_random_env(int R, int C, int N, int skip_last_port)
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
     insert_flat_T_matrix(env);
+    env.moves_upper_bound = get_moves_upper_bound(env);
 
     return env;
 }
@@ -50,6 +53,7 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port)
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
     insert_flat_T_matrix(env);
+    env.moves_upper_bound = get_moves_upper_bound(env);
 
     return env;
 }
@@ -62,6 +66,7 @@ Env copy_env(Env env)
     copy.skip_last_port = env.skip_last_port;
     copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.one_hot_bay = copy_array(env.one_hot_bay);
+    copy.moves_upper_bound = env.moves_upper_bound;
     return copy;
 }
 

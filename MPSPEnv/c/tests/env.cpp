@@ -33,25 +33,38 @@ TEST(env, blocking)
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 0);
     StepInfo step_info;
-    step_info = step(env, 0);
-    CHECK_EQUAL(step_info.is_terminal, 0);
-    CHECK_EQUAL(step_info.reward, 0);
+
+    CHECK_EQUAL(env.T->containers_left, 5);
+    CHECK_EQUAL(env.moves_upper_bound, 5);
 
     step_info = step(env, 0);
     CHECK_EQUAL(step_info.is_terminal, 0);
     CHECK_EQUAL(step_info.reward, 0);
+    CHECK_EQUAL(env.T->containers_left, 4);
+    CHECK_EQUAL(env.T->containers_placed, 1);
+
+    step_info = step(env, 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
+    CHECK_EQUAL(step_info.reward, 0);
+    CHECK_EQUAL(env.T->containers_left, 3);
+    CHECK_EQUAL(env.T->containers_placed, 2);
 
     step_info = step(env, 5);
     CHECK_EQUAL(step_info.is_terminal, 0);
     CHECK_EQUAL(step_info.reward, -1);
+    CHECK_EQUAL(env.T->containers_left, 4);
+    CHECK_EQUAL(env.T->containers_placed, 2);
 
     step_info = step(env, 2);
     CHECK_EQUAL(step_info.is_terminal, 0);
     CHECK_EQUAL(step_info.reward, -1);
+    CHECK_EQUAL(env.T->containers_left, 3);
 
     step_info = step(env, 0);
     CHECK_EQUAL(step_info.is_terminal, 0);
     CHECK_EQUAL(step_info.reward, 0);
+    CHECK_EQUAL(env.T->containers_left, 3);
+
     int expected_T_matrix[] = {
         0, 0, 1, 0, 0, 0,
         0, 0, 1, 1, 0, 0,
@@ -78,6 +91,7 @@ TEST(env, blocking)
     step_info = step(env, 0);
     CHECK_EQUAL(step_info.is_terminal, 1);
     CHECK_EQUAL(step_info.reward, 0);
+    CHECK_EQUAL(env.T->containers_left, 0);
     free_env(env);
 }
 
@@ -94,20 +108,21 @@ TEST(env, skip_last_port1)
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 0);
+    CHECK_EQUAL(env.moves_upper_bound, 10);
     StepInfo step_info;
     step_info = step(env, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 0);
+    CHECK_EQUAL(step_info.is_terminal, 0);
     step_info = step(env, 0);
-    CHECK(step_info.is_terminal == 1);
+    CHECK_EQUAL(step_info.is_terminal, 1);
     free_env(env);
 }
 
@@ -124,25 +139,29 @@ TEST(env, skip_last_port2)
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 1);
+    CHECK_EQUAL(env.moves_upper_bound, 10);
+
     StepInfo step_info;
-    CHECK(env.T->current_port == 0);
+    CHECK_EQUAL(env.T->current_port, 0);
     step_info = step(env, 0);
-    CHECK(env.T->current_port == 0);
+    CHECK_EQUAL(env.T->current_port, 0);
     step_info = step(env, 0);
-    CHECK(env.T->current_port == 0);
+    CHECK_EQUAL(env.T->current_port, 0);
     step_info = step(env, 0);
-    CHECK(env.T->current_port == 3);
+    CHECK_EQUAL(env.T->current_port, 3);
     step_info = step(env, 0);
-    CHECK(env.T->current_port == 3);
+    CHECK_EQUAL(env.T->current_port, 3);
     step_info = step(env, 0);
-    CHECK(env.T->current_port == 4);
-    CHECK(step_info.is_terminal == 1);
+    CHECK_EQUAL(env.T->current_port, 4);
+    CHECK_EQUAL(step_info.is_terminal, 1);
+    CHECK_EQUAL(env.T->containers_left, 5);
     free_env(env);
 }
 
 TEST(env, copy_env)
 {
     Env env = get_random_env(3, 2, 4, 0);
+    step(env, 0);
     Env copy = copy_env(env);
 
     test_array_equals(env.bay.matrix, copy.bay.matrix);
@@ -156,11 +175,14 @@ TEST(env, copy_env)
     CHECK(env.T->seed == copy.T->seed);
     CHECK(env.T->last_non_zero_column == copy.T->last_non_zero_column);
     CHECK(env.T->current_port == copy.T->current_port);
+    CHECK(env.T->containers_placed == copy.T->containers_placed);
+    CHECK(env.T->containers_left == copy.T->containers_left);
     CHECK(env.T->N == copy.T->N);
     CHECK(env.skip_last_port == copy.skip_last_port);
     CHECK(env.bay.C == copy.bay.C);
     CHECK(env.bay.R == copy.bay.R);
     CHECK(env.bay.N == copy.bay.N);
+    CHECK(env.moves_upper_bound == copy.moves_upper_bound);
 
     free_env(env);
     free_env(copy);

@@ -90,11 +90,6 @@ class Env(gym.Env):
 
         self.total_reward += reward
 
-        if action < self.C:
-            self.containers_placed += 1
-
-        self.containers_left = np.sum(self.flat_T_store.ndarray)
-
         if not self.speedy:
             return (
                 self._get_observation(),
@@ -118,8 +113,6 @@ class Env(gym.Env):
         )
         new_env._env = c_lib.copy_env(self._env)
         new_env.total_reward = self.total_reward
-        new_env.containers_placed = self.containers_placed
-        new_env.containers_left = self.containers_left
         new_env.action_probs = self.action_probs
         new_env.terminal = self.terminal
         new_env._set_stores()
@@ -167,8 +160,15 @@ class Env(gym.Env):
             self._env = None
 
     @property
+    def moves_upper_bound(self):
+        return self._env.moves_upper_bound
+
+    @property
     def moves_to_solve(self):
-        return self.containers_placed + self.containers_left
+        return (
+            self._env.T.contents.containers_placed
+            + self._env.T.contents.containers_left
+        )
 
     @property
     def remaining_ports(self):
@@ -212,9 +212,7 @@ class Env(gym.Env):
 
     def _reset_constants(self):
         self.total_reward = 0
-        self.containers_placed = 0
         self.terminal = False
-        self.containers_left = np.sum(self.flat_T_store.ndarray)
         self.action_probs = None
 
     def _assert_transportation(self, transportation: np.ndarray):

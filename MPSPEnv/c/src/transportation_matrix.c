@@ -65,12 +65,14 @@ void increment_matrix_and_port(Transportation_Info *T, int port, int container, 
 {
     T->matrix.values[port * T->N + container] += n_containers;
     T->containers_per_port.values[port] += n_containers;
+    T->containers_left += n_containers;
 }
 
 void decrement_matrix_and_port(Transportation_Info *T, int port, int container)
 {
     T->matrix.values[port * T->N + container] -= 1;
     T->containers_per_port.values[port] -= 1;
+    T->containers_left -= 1;
 }
 
 void insert_containers(Transportation_Info *T, int container, int n_containers)
@@ -171,6 +173,8 @@ int transportation_pop_container(Transportation_Info *T)
     decrement_matrix_and_port(T, 0, T->last_non_zero_column);
     insert_last_non_zero_column(T);
 
+    T->containers_placed += 1;
+
     return container;
 }
 
@@ -183,6 +187,9 @@ Transportation_Info *copy_transportation_info(Transportation_Info *T)
     copy->containers_per_port = copy_array(T->containers_per_port);
     copy->last_non_zero_column = T->last_non_zero_column;
     copy->current_port = T->current_port;
+    copy->containers_left = T->containers_left;
+    copy->containers_placed = T->containers_placed;
+
     return copy;
 }
 
@@ -197,6 +204,8 @@ Transportation_Info *get_empty_transportation_matrix(
     T->containers_per_port = get_zeros(N);
     T->last_non_zero_column = N - 1;
     T->current_port = 0;
+    T->containers_left = 0;
+    T->containers_placed = 0;
 
     return T;
 }
@@ -213,6 +222,14 @@ void insert_t_matrix(Transportation_Info *T, int *T_matrix)
     }
 }
 
+void insert_containers_left(Transportation_Info *T)
+{
+    for (int i = 0; i < T->N; i++)
+    {
+        T->containers_left += T->containers_per_port.values[i];
+    }
+}
+
 Transportation_Info *get_random_transportation_matrix(
     int N,
     int bay_capacity)
@@ -224,10 +241,10 @@ Transportation_Info *get_random_transportation_matrix(
     insert_seeded_transportation_matrix(T, bay_capacity);
     insert_containers_per_port(T);
     insert_last_non_zero_column(T);
+    insert_containers_left(T);
 
     return T;
 }
-
 Transportation_Info *get_specific_transportation_matrix(
     int N,
     int *T_matrix)
@@ -238,6 +255,7 @@ Transportation_Info *get_specific_transportation_matrix(
     insert_t_matrix(T, T_matrix);
     insert_containers_per_port(T);
     insert_last_non_zero_column(T);
+    insert_containers_left(T);
 
     return T;
 }

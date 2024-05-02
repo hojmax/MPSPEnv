@@ -12,6 +12,8 @@ typedef struct Transportation_Info
     int seed;
     int last_non_zero_column;
     int current_port;
+    int containers_left;
+    int containers_placed;
 } Transportation_Info;
 
 Transportation_Info *get_random_transportation_matrix(
