@@ -161,7 +161,7 @@ class Env(gym.Env):
 
     @property
     def moves_upper_bound(self) -> int:
-        return self._env.moves_upper_bound
+        return c_lib.get_moves_upper_bound(self._env)
 
     @property
     def moves_to_solve(self) -> int:

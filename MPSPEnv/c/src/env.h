@@ -11,7 +11,6 @@ typedef struct Env
     Array one_hot_bay;
     Array flat_T_matrix;
     int skip_last_port;
-    int moves_upper_bound;
 } Env;
 
 typedef struct StepInfo

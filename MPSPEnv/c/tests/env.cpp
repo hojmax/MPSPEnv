@@ -35,7 +35,6 @@ TEST(env, blocking)
     StepInfo step_info;
 
     CHECK_EQUAL(env.T->containers_left, 5);
-    CHECK_EQUAL(env.moves_upper_bound, 6);
 
     step_info = step(env, 0);
     CHECK_EQUAL(step_info.is_terminal, 0);
@@ -108,7 +107,6 @@ TEST(env, skip_last_port1)
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 0);
-    CHECK_EQUAL(env.moves_upper_bound, 11);
     StepInfo step_info;
     step_info = step(env, 0);
     step_info = step(env, 0);
@@ -139,7 +137,6 @@ TEST(env, skip_last_port2)
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 1);
-    CHECK_EQUAL(env.moves_upper_bound, 11);
 
     StepInfo step_info;
     CHECK_EQUAL(env.T->current_port, 0);
@@ -182,7 +179,6 @@ TEST(env, copy_env)
     CHECK(env.bay.C == copy.bay.C);
     CHECK(env.bay.R == copy.bay.R);
     CHECK(env.bay.N == copy.bay.N);
-    CHECK(env.moves_upper_bound == copy.moves_upper_bound);
 
     free_env(env);
     free_env(copy);

@@ -43,7 +43,6 @@ class Env(Structure):
         ("one_hot_bay", Array),
         ("flat_T_matrix", Array),
         ("skip_last_port", c_int),
-        ("moves_upper_bound", c_int),
     ]
 
 
@@ -75,8 +74,10 @@ c_lib.get_specific_env.restype = Env
 c_lib.free_env.argtypes = [Env]
 
 c_lib.set_random_seed.argtypes = []
-
 c_lib.set_seed.argtypes = [c_int]
 
 c_lib.copy_env.argtypes = [Env]
 c_lib.copy_env.restype = Env
+
+c_lib.get_moves_upper_bound.argtypes = [Env]
+c_lib.get_moves_upper_bound.restype = c_int
