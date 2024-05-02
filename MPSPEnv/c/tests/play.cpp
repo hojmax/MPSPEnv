@@ -23,8 +23,8 @@ TEST(play, dummy_strategy)
         0, 0, 0, 0, 0, 0};
     Env env = get_specific_env(R, C, N, T_matrix, 0);
     int moves_to_solve = dummy_strategy(env);
-    CHECK_EQUAL(21, moves_to_solve);
-    CHECK_EQUAL(21, env.T->containers_placed);
+    CHECK_EQUAL(13, moves_to_solve);
+    CHECK_EQUAL(13, env.T->containers_placed);
     CHECK_EQUAL(0, env.T->containers_left);
     free_env(env);
 }

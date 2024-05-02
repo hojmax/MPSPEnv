@@ -4,7 +4,7 @@
 
 int get_first_add_action(Array mask)
 {
-    for (int i = 0; i < mask.n / 2; i++)
+    for (int i = mask.n / 2 - 1; i >= 0; i--)
     {
         if (mask.values[i] == 1)
             return i;
