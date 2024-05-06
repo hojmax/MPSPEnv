@@ -176,7 +176,7 @@ StepInfo step(Env env, int action)
     decide_is_terminated(&step_info, env);
 
     insert_flat_T_matrix(env);
-    insert_one_hot_bay(env);
+    // insert_one_hot_bay(env);
 
     return step_info;
 }

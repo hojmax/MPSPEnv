@@ -67,6 +67,8 @@ class Env(gym.Env):
         self.speedy = speedy
         self.action_probs = None
         self.total_reward = 0
+        self._port_tracker = 0
+        self.reshuffles_per_port = 0
 
         if not self.speedy:
             self._set_gym_interface()
@@ -88,6 +90,11 @@ class Env(gym.Env):
             reward = step_info.reward
             self.terminal = bool(step_info.is_terminal)
 
+        if self._port_tracker != self._env.T.contents.current_port:
+            self._port_tracker = self._env.T.contents.current_port
+            self.reshuffles_per_port = 0
+
+        self.reshuffles_per_port += reward
         self.total_reward += reward
 
         if not self.speedy:

@@ -14,13 +14,11 @@ int get_first_add_action(Array mask)
 
 int dummy_strategy(Env env)
 {
-    StepInfo step_info;
-    int action = get_first_add_action(env.bay.mask);
-    step_info = step(env, action);
+    StepInfo step_info = {0, 0};
 
     while (!step_info.is_terminal)
     {
-        action = get_first_add_action(env.bay.mask);
+        int action = get_first_add_action(env.bay.mask);
         step_info = step(env, action);
     }
 
