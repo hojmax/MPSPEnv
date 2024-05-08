@@ -212,7 +212,7 @@ class Env(gym.Env):
 
     @property
     def history(self) -> np.ndarray:
-        if self.history_store == None:
+        if type(self.history_store) == type(None):
             n_states = self.R * self.C * (self.N - 1)
             char_array = ctypes.cast(
                 self._env.history,
