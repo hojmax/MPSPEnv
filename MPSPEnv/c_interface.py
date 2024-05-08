@@ -1,5 +1,5 @@
 import ctypes
-from ctypes import POINTER, c_int, Structure
+from ctypes import POINTER, c_int, Structure, c_char
 import os
 import glob
 
@@ -43,6 +43,8 @@ class Env(Structure):
         ("one_hot_bay", Array),
         ("flat_T_matrix", Array),
         ("skip_last_port", c_int),
+        ("history_index", POINTER(c_int)),
+        ("history", POINTER(c_char)),
     ]
 
 
@@ -65,10 +67,10 @@ c_lib = ctypes.CDLL(c_lib_path)
 c_lib.step.argtypes = [Env, c_int]
 c_lib.step.restype = StepInfo
 
-c_lib.get_random_env.argtypes = [c_int, c_int, c_int, c_int]
+c_lib.get_random_env.argtypes = [c_int, c_int, c_int, c_int, c_int]
 c_lib.get_random_env.restype = Env
 
-c_lib.get_specific_env.argtypes = [c_int, c_int, c_int, POINTER(c_int), c_int]
+c_lib.get_specific_env.argtypes = [c_int, c_int, c_int, POINTER(c_int), c_int, c_int]
 c_lib.get_specific_env.restype = Env
 
 c_lib.free_env.argtypes = [Env]
@@ -76,7 +78,7 @@ c_lib.free_env.argtypes = [Env]
 c_lib.set_random_seed.argtypes = []
 c_lib.set_seed.argtypes = [c_int]
 
-c_lib.copy_env.argtypes = [Env]
+c_lib.copy_env.argtypes = [Env, c_int]
 c_lib.copy_env.restype = Env
 
 c_lib.get_moves_upper_bound.argtypes = [Env]

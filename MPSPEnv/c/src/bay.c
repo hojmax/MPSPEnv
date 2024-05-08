@@ -71,7 +71,7 @@ int *min_container_ref(Bay bay, int column)
 
 // Checks bottom up for containers going to current port (always 1)
 // If container is 1, then it is offloaded, and so are all the containers above it
-void offload_column(Bay bay, int j, Array offloaded_containers)
+void offload_column(Bay bay, int j, Array offloaded_containers, ReshuffleCallback callback, Env *env)
 {
     int offload_column_rest = 0;
     const int min_row = bay.R - containers_in_column(bay, j);
@@ -83,6 +83,9 @@ void offload_column(Bay bay, int j, Array offloaded_containers)
 
         if (container == 1)
             offload_column_rest = 1;
+
+        if (offload_column_rest && container != 1)
+            callback(i, j, env);
 
         if (offload_column_rest)
         {
@@ -97,12 +100,12 @@ void offload_column(Bay bay, int j, Array offloaded_containers)
     }
 }
 
-Array bay_offload_containers(Bay bay)
+Array bay_offload_containers(Bay bay, ReshuffleCallback callback, Env *env)
 {
     Array offloaded_containers = get_zeros(bay.N);
     for (int j = 0; j < bay.C; j++)
     {
-        offload_column(bay, j, offloaded_containers);
+        offload_column(bay, j, offloaded_containers, callback, env);
     }
 
     return offloaded_containers;
@@ -124,9 +127,9 @@ void decrement_bay(Bay bay)
 
 // Offloads all containers going to current port (always 1)
 // Returns reshuffled containers
-Array bay_sail_along(Bay bay)
+Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env)
 {
-    Array reshuffled = bay_offload_containers(bay);
+    Array reshuffled = bay_offload_containers(bay, callback, env);
     decrement_bay(bay);
     // Ignore 1s, as they are offloaded
     reshuffled.values[1] = 0;

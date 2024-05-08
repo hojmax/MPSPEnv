@@ -2,6 +2,8 @@
 #include "play.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void insert_flat_T_matrix(Env env)
 {
@@ -20,7 +22,22 @@ void insert_flat_T_matrix(Env env)
     }
 }
 
-Env get_random_env(int R, int C, int N, int skip_last_port)
+void initialize_history(Env *env, int track_history)
+{
+    env->history_index = (int *)malloc(sizeof(int));
+    if (track_history)
+    {
+        env->history = (char *)calloc(env->bay.R * env->bay.C * env->bay.R * env->bay.C * (env->bay.N - 1), sizeof(char));
+        env->history_index[0] = 0;
+    }
+    else
+    {
+        env->history = NULL;
+        env->history_index[0] = -1;
+    }
+}
+
+Env get_random_env(int R, int C, int N, int skip_last_port, int track_history)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -34,11 +51,11 @@ Env get_random_env(int R, int C, int N, int skip_last_port)
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
     insert_flat_T_matrix(env);
-
+    initialize_history(&env, track_history);
     return env;
 }
 
-Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port)
+Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int track_history)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -52,11 +69,11 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port)
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
     insert_flat_T_matrix(env);
-
+    initialize_history(&env, track_history);
     return env;
 }
 
-Env copy_env(Env env)
+Env copy_env(Env env, int track_history)
 {
     Env copy;
     copy.bay = copy_bay(env.bay);
@@ -64,6 +81,19 @@ Env copy_env(Env env)
     copy.skip_last_port = env.skip_last_port;
     copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.one_hot_bay = copy_array(env.one_hot_bay);
+    if (track_history)
+    {
+        copy.history = (char *)malloc(env.bay.R * env.bay.C * env.bay.R * env.bay.C * (env.T->N - 1) * sizeof(char));
+        memcpy(copy.history, env.history, env.bay.R * env.bay.C * env.bay.R * env.bay.C * (env.T->N - 1) * sizeof(char));
+        copy.history_index = (int *)malloc(sizeof(int));
+        copy.history_index[0] = env.history_index[0];
+    }
+    else
+    {
+        copy.history = NULL;
+        copy.history_index = (int *)malloc(sizeof(int));
+        copy.history_index[0] = -1;
+    }
     return copy;
 }
 
@@ -91,6 +121,8 @@ void free_env(Env env)
     free_transportation_matrix(env.T);
     free_array(env.flat_T_matrix);
     free_array(env.one_hot_bay);
+    free(env.history);
+    free(env.history_index);
 }
 
 int get_add_reward(Env env, int column, int next_container)
@@ -112,12 +144,29 @@ int get_remove_reward(Env env, int column, int top_container)
         return -1;
 }
 
+void backpropagate_reshuffle_in_history(int row, int column, Env *env)
+{
+    if (env->history_index[0] == -1)
+        return;
+
+    int i = env->history_index[0];
+    while (1)
+    {
+        int index = i * env->bay.R * env->bay.C + row * env->bay.C + column;
+        if (env->history[index] == 0)
+            break;
+
+        env->history[index] = 1;
+        i--;
+    };
+}
+
 void handle_sailing(Env env)
 {
     while (no_containers_at_port(env.T) && !is_last_port(env.T))
     {
         transportation_sail_along(env.T);
-        Array reshuffled = bay_sail_along(env.bay);
+        Array reshuffled = bay_sail_along(env.bay, backpropagate_reshuffle_in_history, &env);
         transportation_insert_reshuffled(env.T, reshuffled);
         free_array(reshuffled);
     }
@@ -136,6 +185,9 @@ int add_container(Env env, int column)
 
 int remove_container(Env env, int column)
 {
+    int row = env.bay.R - env.bay.column_counts.values[column];
+    backpropagate_reshuffle_in_history(row, column, &env);
+
     int top_container = get_top_container(env.bay, column);
     int reward = get_remove_reward(env, column, top_container);
     bay_pop_container(env.bay, column);
@@ -149,6 +201,53 @@ void decide_is_terminated(StepInfo *step_info, Env env)
         step_info->is_terminal = env.T->current_port >= env.T->N - 2;
     else
         step_info->is_terminal = env.T->current_port >= env.T->N - 1;
+}
+
+void copy_bay_to_history(Env env)
+{
+    if (env.history_index[0] == -1)
+        return;
+
+    env.history_index[0]++;
+
+    if (env.history_index[0] == env.bay.R * env.bay.C * (env.bay.N - 1))
+    {
+        // Slice would be out of bounds, so we stop tracking history further
+        env.history_index[0] = -1;
+        return;
+    }
+
+    for (int j = 0; j < env.bay.C; j++)
+    {
+        for (int i = env.bay.R - env.bay.column_counts.values[j]; i < env.bay.R; i++)
+        {
+            int index = env.history_index[0] * env.bay.R * env.bay.C + i * env.bay.C + j;
+            env.history[index] = 2;
+        }
+    }
+}
+
+void cleanup_history(Env env)
+{
+    if (env.history_index[0] == -1)
+        return;
+    for (int slice = 0; slice < env.history_index[0] + 1; slice++)
+    {
+        for (int j = 0; j < env.bay.C; j++)
+        {
+            int i = env.bay.R - 1;
+            while (i >= 0)
+            {
+                int index = slice * env.bay.R * env.bay.C + i * env.bay.C + j;
+                if (env.history[index] == 0)
+                    break;
+                else if (env.history[index] == 2)
+                    env.history[index] = 0;
+
+                i--;
+            }
+        }
+    }
 }
 
 void step_action(StepInfo *step_info, int action, Env env)
@@ -177,6 +276,10 @@ StepInfo step(Env env, int action)
 
     insert_flat_T_matrix(env);
     // insert_one_hot_bay(env);
+    copy_bay_to_history(env);
+
+    if (step_info.is_terminal)
+        cleanup_history(env);
 
     return step_info;
 }

@@ -117,6 +117,10 @@ TEST(bay, bay_add_container2)
     free_bay(bay);
 }
 
+void fake_callback(int a, int b, Env *env)
+{
+}
+
 TEST(bay, bay_sail_along)
 {
     int R = 3;
@@ -127,7 +131,7 @@ TEST(bay, bay_sail_along)
     int column = 0;
     bay_add_container(bay, column, container);
     bay_add_container(bay, column, container);
-    Array reshuffled = bay_sail_along(bay);
+    Array reshuffled = bay_sail_along(bay, fake_callback, NULL);
     int expected_reshuffled[] = {0, 0, 0, 0};
     test_array_compare(reshuffled, expected_reshuffled);
     int expected_column_counts[] = {0, 0};
@@ -164,7 +168,7 @@ TEST(bay, bay_sail_along2)
     column = 1;
     container = 1;
     bay_add_container(bay, column, container);
-    Array reshuffled = bay_sail_along(bay);
+    Array reshuffled = bay_sail_along(bay, fake_callback, NULL);
     int expected_reshuffled[] = {0, 2, 0, 0};
     test_array_compare(reshuffled, expected_reshuffled);
     int expected_column_counts[] = {0, 1};

@@ -13,7 +13,7 @@ int calculate_stats(int R, int C, int N, int repeats)
 
     for (int i = 0; i < repeats; i++)
     {
-        Env env = get_random_env(R, C, N, 1);
+        Env env = get_random_env(R, C, N, 1, 0);
         int moves = get_moves_upper_bound(env);
 
         if (moves > max_moves)

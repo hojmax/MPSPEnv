@@ -21,7 +21,7 @@ TEST(play, dummy_strategy)
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0};
-    Env env = get_specific_env(R, C, N, T_matrix, 0);
+    Env env = get_specific_env(R, C, N, T_matrix, 0, 1);
     int moves_to_solve = dummy_strategy(env);
     CHECK_EQUAL(13, moves_to_solve);
     CHECK_EQUAL(13, env.T->containers_placed);
@@ -42,14 +42,14 @@ TEST(play, dummy_strategy2)
         0, 0, 0, 0, 0, 9,
         0, 0, 0, 0, 0, 0};
     // Not skipping last port
-    Env env = get_specific_env(R, C, N, T_matrix, 0);
+    Env env = get_specific_env(R, C, N, T_matrix, 0, 1);
     int moves_to_solve = dummy_strategy(env);
     CHECK_EQUAL(12, moves_to_solve);
     CHECK_EQUAL(12, env.T->containers_placed);
     CHECK_EQUAL(0, env.T->containers_left);
     free_env(env);
     // Skipping last port
-    env = get_specific_env(R, C, N, T_matrix, 1);
+    env = get_specific_env(R, C, N, T_matrix, 1, 1);
     moves_to_solve = dummy_strategy(env);
     CHECK_EQUAL(12, moves_to_solve);
     CHECK_EQUAL(3, env.T->containers_placed);

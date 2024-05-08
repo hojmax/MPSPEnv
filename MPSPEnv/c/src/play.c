@@ -27,7 +27,7 @@ int dummy_strategy(Env env)
 
 int get_moves_upper_bound(Env env)
 {
-    Env copy = copy_env(env);
+    Env copy = copy_env(env, 0);
     copy.skip_last_port = 1;
     int moves_upper_bound = dummy_strategy(copy);
     free_env(copy);

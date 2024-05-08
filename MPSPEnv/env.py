@@ -4,7 +4,7 @@ from gymnasium import spaces
 import gymnasium as gym
 from MPSPEnv.visualizer import Visualizer
 import warnings
-from ctypes import POINTER, c_int
+import ctypes
 
 
 class LazyNdarray:
@@ -108,7 +108,7 @@ class Env(gym.Env):
         else:
             return None
 
-    def copy(self):
+    def copy(self, track_history: bool = True):
         new_env = Env(
             self.R,
             self.C,
@@ -118,7 +118,7 @@ class Env(gym.Env):
             self.strict_mask,
             self.speedy,
         )
-        new_env._env = c_lib.copy_env(self._env)
+        new_env._env = c_lib.copy_env(self._env, int(track_history))
         new_env.total_reward = self.total_reward
         new_env.action_probs = self.action_probs
         new_env.terminal = self.terminal
@@ -201,6 +201,20 @@ class Env(gym.Env):
     def mask(self) -> np.ndarray:
         return self.mask_store.ndarray.copy()
 
+    @property
+    def history(self) -> np.ndarray:
+        if self.history_store == None:
+            n_states = self.R * self.C * (self.N - 1)
+            char_array = ctypes.cast(
+                self._env.history,
+                ctypes.POINTER(ctypes.c_char * n_states * self.R * self.C),
+            ).contents
+            self.history_store = np.frombuffer(char_array, dtype=np.int8).reshape(
+                (n_states, self.R, self.C)
+            )
+
+        return self.history_store[: self._env.history_index[0] + 1].copy()
+
     def action_masks(self) -> np.ndarray:
         return self.mask
 
@@ -216,6 +230,7 @@ class Env(gym.Env):
         self.flat_T_store = LazyNdarray(
             self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
         )
+        self.history_store = None
 
     def _reset_constants(self):
         self.total_reward = 0
@@ -289,7 +304,7 @@ class Env(gym.Env):
             c_lib.set_seed(seed)
 
         self._env = c_lib.get_random_env(
-            self.R, self.C, self.N, int(self.skip_last_port)
+            self.R, self.C, self.N, int(self.skip_last_port), int(True)
         )
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
@@ -300,8 +315,9 @@ class Env(gym.Env):
             self.R,
             self.C,
             self.N,
-            transportation.ctypes.data_as(POINTER(c_int)),
+            transportation.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
             int(self.skip_last_port),
+            int(True),
         )
 
     def __del__(self):
