@@ -69,6 +69,7 @@ class Env(gym.Env):
         self.total_reward = 0
         self._port_tracker = 0
         self.reshuffles_per_port = 0
+        self.steps_taken = 0
 
         if not self.speedy:
             self._set_gym_interface()
@@ -84,6 +85,7 @@ class Env(gym.Env):
             ), f"The action {action} is not allowed. The mask is {self.mask_store.ndarray}"
 
         reward = -10
+        self.steps_taken += 1
 
         if self.mask_store.ndarray[action] == 1:
             step_info = c_lib.step(self._env, action)
@@ -122,6 +124,9 @@ class Env(gym.Env):
         new_env.total_reward = self.total_reward
         new_env.action_probs = self.action_probs
         new_env.terminal = self.terminal
+        new_env._port_tracker = self._port_tracker
+        new_env.reshuffles_per_port = self.reshuffles_per_port
+        new_env.steps_taken = self.steps_taken
         new_env._set_stores()
 
         return new_env
@@ -169,6 +174,10 @@ class Env(gym.Env):
     @property
     def moves_upper_bound(self) -> int:
         return c_lib.get_moves_upper_bound(self._env)
+
+    @property
+    def containers_left(self) -> int:
+        return self._env.T.contents.containers_left
 
     @property
     def moves_to_solve(self) -> int:
