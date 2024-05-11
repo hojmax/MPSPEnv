@@ -51,6 +51,7 @@ class Env(gym.Env):
         take_first_action: bool = False,
         strict_mask: bool = False,
         speedy: bool = False,
+        should_reorder: bool = True,
     ):
         super().__init__()
         assert R > 0, f"R must be positive but was {R}"
@@ -65,6 +66,7 @@ class Env(gym.Env):
         self.take_first_action = take_first_action
         self.strict_mask = strict_mask
         self.speedy = speedy
+        self.should_reorder = should_reorder
         self.action_probs = None
         self.total_reward = 0
         self._port_tracker = 0
@@ -119,6 +121,7 @@ class Env(gym.Env):
             self.take_first_action,
             self.strict_mask,
             self.speedy,
+            self.should_reorder,
         )
         new_env._env = c_lib.copy_env(self._env, int(track_history))
         new_env.total_reward = self.total_reward
@@ -313,7 +316,12 @@ class Env(gym.Env):
             c_lib.set_seed(seed)
 
         self._env = c_lib.get_random_env(
-            self.R, self.C, self.N, int(self.skip_last_port), int(True)
+            self.R,
+            self.C,
+            self.N,
+            int(self.skip_last_port),
+            int(True),
+            int(self.should_reorder),
         )
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
@@ -327,6 +335,7 @@ class Env(gym.Env):
             transportation.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
             int(self.skip_last_port),
             int(True),
+            int(self.should_reorder),
         )
 
     def __del__(self):

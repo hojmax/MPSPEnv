@@ -59,7 +59,7 @@ TEST(env, blocking)
         0, 0, 0, 0, 1, 1,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0};
-    Env env = get_specific_env(R, C, N, T_matrix, 0, 1);
+    Env env = get_specific_env(R, C, N, T_matrix, 0, 1, 1);
     StepInfo step_info;
 
     CHECK_EQUAL(env.T->containers_left, 5);
@@ -134,7 +134,7 @@ TEST(env, skip_last_port1)
         0, 0, 0, 0, 1, 1,
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
-    Env env = get_specific_env(R, C, N, T_matrix, 0, 1);
+    Env env = get_specific_env(R, C, N, T_matrix, 0, 1, 1);
     StepInfo step_info;
     step_info = step(env, 0);
     step_info = step(env, 0);
@@ -164,7 +164,7 @@ TEST(env, skip_last_port2)
         0, 0, 0, 0, 1, 1,
         0, 0, 0, 0, 0, 5,
         0, 0, 0, 0, 0, 0};
-    Env env = get_specific_env(R, C, N, T_matrix, 1, 1);
+    Env env = get_specific_env(R, C, N, T_matrix, 1, 1, 1);
 
     StepInfo step_info;
     CHECK_EQUAL(env.T->current_port, 0);
@@ -185,7 +185,7 @@ TEST(env, skip_last_port2)
 
 TEST(env, copy_env)
 {
-    Env env = get_random_env(3, 2, 4, 0, 1);
+    Env env = get_random_env(3, 2, 4, 0, 1, 1);
     step(env, 0);
     Env copy = copy_env(env, 1);
 
@@ -207,6 +207,7 @@ TEST(env, copy_env)
     CHECK(env.bay.C == copy.bay.C);
     CHECK(env.bay.R == copy.bay.R);
     CHECK(env.bay.N == copy.bay.N);
+    CHECK(env.should_reorder == copy.should_reorder);
     STRCMP_EQUAL(env.history, copy.history);
     CHECK(env.history_index[0] == copy.history_index[0]);
 
@@ -217,7 +218,7 @@ TEST(env, copy_env)
 TEST(env, history)
 {
     set_seed(10);
-    Env env = get_random_env(3, 2, 4, 0, 1);
+    Env env = get_random_env(3, 2, 4, 0, 1, 1);
     CHECK_EQUAL(0, env.history_index[0]);
     StepInfo step_info = step(env, 0);
     CHECK_EQUAL(1, env.history_index[0]);

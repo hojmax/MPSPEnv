@@ -37,7 +37,7 @@ void initialize_history(Env *env, int track_history)
     }
 }
 
-Env get_random_env(int R, int C, int N, int skip_last_port, int track_history)
+Env get_random_env(int R, int C, int N, int skip_last_port, int track_history, int should_reorder)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -50,12 +50,13 @@ Env get_random_env(int R, int C, int N, int skip_last_port, int track_history)
     int upper_triangle_size = (N * (N - 1)) / 2;
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
+    env.should_reorder = should_reorder;
     insert_flat_T_matrix(env);
     initialize_history(&env, track_history);
     return env;
 }
 
-Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int track_history)
+Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int track_history, int should_reorder)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -68,6 +69,7 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int
     int upper_triangle_size = (N * (N - 1)) / 2;
     env.flat_T_matrix = get_zeros(upper_triangle_size);
     env.one_hot_bay = get_zeros((N - 1) * R * C);
+    env.should_reorder = should_reorder;
     insert_flat_T_matrix(env);
     initialize_history(&env, track_history);
     return env;
@@ -81,6 +83,7 @@ Env copy_env(Env env, int track_history)
     copy.skip_last_port = env.skip_last_port;
     copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.one_hot_bay = copy_array(env.one_hot_bay);
+    copy.should_reorder = env.should_reorder;
     if (track_history)
     {
         copy.history = (char *)malloc(env.bay.R * env.bay.C * env.bay.R * env.bay.C * (env.T->N - 1) * sizeof(char));
@@ -176,7 +179,7 @@ int add_container(Env env, int column)
 {
     int next_container = transportation_pop_container(env.T);
     int reward = get_add_reward(env, column, next_container);
-    bay_add_container(env.bay, column, next_container);
+    bay_add_container(env.bay, column, next_container, env.should_reorder);
 
     handle_sailing(env);
 
@@ -190,7 +193,7 @@ int remove_container(Env env, int column)
 
     int top_container = get_top_container(env.bay, column);
     int reward = get_remove_reward(env, column, top_container);
-    bay_pop_container(env.bay, column);
+    bay_pop_container(env.bay, column, env.should_reorder);
     transportation_insert_container(env.T, top_container);
     return reward;
 }

@@ -212,15 +212,18 @@ void reorder_bay(Bay bay, int first_affected_row)
     free_array(correct_column_order);
 }
 
-void bay_add_container(Bay bay, int column, int container)
+void bay_add_container(Bay bay, int column, int container, int should_reorder)
 {
     assert(column >= 0 && column < bay.C);
     assert(containers_in_column(bay, column) < bay.R);
     insert_container_into_column(bay, column, container);
     update_min_post_insertion(bay, column, container);
     update_column_mask(bay, column);
-    int first_affected_row = bay.R - containers_in_column(bay, column);
-    reorder_bay(bay, first_affected_row);
+    if (should_reorder)
+    {
+        int first_affected_row = bay.R - containers_in_column(bay, column);
+        reorder_bay(bay, first_affected_row);
+    }
 }
 
 int get_top_container(Bay bay, int column)
@@ -264,13 +267,17 @@ void update_min_post_removal(Bay bay, int column, int container)
     *min_container_ref(bay, column) = find_min_container_in_column(bay, column);
 }
 
-void bay_pop_container(Bay bay, int column)
+void bay_pop_container(Bay bay, int column, int should_reorder)
 {
     assert(column >= 0 && column < bay.C);
     assert(containers_in_column(bay, column) > 0);
     int container = pop_container_from_column(bay, column);
     update_min_post_removal(bay, column, container);
     update_column_mask(bay, column);
-    int first_affected_row = bay.R - containers_in_column(bay, column) - 1;
-    reorder_bay(bay, first_affected_row);
+
+    if (should_reorder)
+    {
+        int first_affected_row = bay.R - containers_in_column(bay, column) - 1;
+        reorder_bay(bay, first_affected_row);
+    }
 }

@@ -51,3 +51,43 @@ def test_history():
     )
     assert np.all(env.history == expected_history)
     env.close()
+
+
+def test_no_reorder():
+    from MPSPEnv import Env
+
+    env = Env(2, 2, 4, skip_last_port=True, should_reorder=False)
+    env.reset_to_transportation(
+        np.array(
+            [
+                [0, 2, 0, 2],
+                [0, 0, 2, 0],
+                [0, 0, 0, 2],
+                [0, 0, 0, 0],
+            ],
+            dtype=np.int32,
+        ),
+    )
+    env.step(0)
+    expected_bay = np.array(
+        [
+            [0, 0],
+            [3, 0],
+        ],
+        dtype=np.int32,
+    )
+    assert np.all(env.bay == expected_bay)
+
+    env.step(0)
+    env.step(1)
+    env.step(3)
+    expected_bay = np.array(
+        [
+            [3, 0],
+            [3, 0],
+        ],
+        dtype=np.int32,
+    )
+    assert np.all(env.bay == expected_bay)
+
+    env.close()
