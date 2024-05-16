@@ -28,6 +28,7 @@ Bay copy_bay(Bay bay)
     copy.min_container_per_column = copy_array(bay.min_container_per_column);
     copy.column_counts = copy_array(bay.column_counts);
     copy.mask = copy_array(bay.mask);
+    copy.added_since_sailing = copy_array(bay.added_since_sailing);
     return copy;
 }
 
@@ -36,7 +37,7 @@ void update_column_mask(Bay bay, int column)
     // Add mask
     bay.mask.values[column] = !is_full_column(bay, column);
     // Remove mask
-    bay.mask.values[column + bay.C] = !is_column_empty(bay, column);
+    bay.mask.values[column + bay.C] = !is_column_empty(bay, column) && !bay.added_since_sailing.values[column];
 }
 
 void insert_mask(Bay bay)
@@ -125,6 +126,14 @@ void decrement_bay(Bay bay)
     }
 }
 
+void reset_added_since_sailing(Bay bay)
+{
+    for (int i = 0; i < bay.C; i++)
+    {
+        bay.added_since_sailing.values[i] = 0;
+    }
+}
+
 // Offloads all containers going to current port (always 1)
 // Returns reshuffled containers
 Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env)
@@ -135,6 +144,7 @@ Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env)
     reshuffled.values[1] = 0;
     // And also decrement the reshuffled containers
     shift_array_left(reshuffled, 1);
+    reset_added_since_sailing(bay);
     insert_mask(bay);
     return reshuffled;
 }
@@ -150,6 +160,7 @@ Bay get_bay(int R, int C, int N)
     bay.min_container_per_column = get_full(C, N);
     bay.column_counts = get_zeros(C);
     bay.mask = get_zeros(2 * bay.C);
+    bay.added_since_sailing = get_zeros(C);
     insert_mask(bay);
 
     return bay;
@@ -161,6 +172,7 @@ void free_bay(Bay bay)
     free_array(bay.min_container_per_column);
     free_array(bay.column_counts);
     free_array(bay.mask);
+    free_array(bay.added_since_sailing);
 }
 void update_min_post_insertion(Bay bay, int column, int container)
 {
@@ -208,6 +220,7 @@ void reorder_bay(Bay bay, int first_affected_row)
     reorder_array(bay.min_container_per_column, correct_column_order);
     reorder_array(bay.column_counts, correct_column_order);
     reorder_mask(bay, correct_column_order);
+    reorder_array(bay.added_since_sailing, correct_column_order);
 
     free_array(correct_column_order);
 }
@@ -218,6 +231,7 @@ void bay_add_container(Bay bay, int column, int container, int should_reorder)
     assert(containers_in_column(bay, column) < bay.R);
     insert_container_into_column(bay, column, container);
     update_min_post_insertion(bay, column, container);
+    bay.added_since_sailing.values[column] = 1;
     update_column_mask(bay, column);
     if (should_reorder)
     {

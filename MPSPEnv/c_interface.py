@@ -19,6 +19,7 @@ class Bay(Structure):
         ("matrix", Array),
         ("min_container_per_column", Array),
         ("column_counts", Array),
+        ("added_since_sailing", Array),
         ("mask", Array),
     ]
 

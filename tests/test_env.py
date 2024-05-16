@@ -10,49 +10,6 @@ def build_env():
     subprocess.run("cd MPSPEnv && make clean", shell=True)  # Teardown
 
 
-def test_history():
-    from MPSPEnv import Env
-
-    env = Env(2, 2, 4, skip_last_port=True)
-    env.reset_to_transportation(
-        np.array(
-            [
-                [0, 2, 0, 2],
-                [0, 0, 2, 0],
-                [0, 0, 0, 2],
-                [0, 0, 0, 0],
-            ],
-            dtype=np.int32,
-        ),
-    )
-    env.step(0)
-    env.step(1)
-    env.step(0)
-    env.step(3)
-    env.step(0)
-    env.step(1)
-    env.step(0)
-    env.step(0)
-    env.step(0)
-    expected_history = np.array(
-        [
-            [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]],
-            [[0, 1], [0, 0]],
-            [[0, 1], [0, 0]],
-            [[0, 0], [0, 0]],
-            [[1, 0], [0, 0]],
-            [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]],
-        ],
-        dtype=np.int8,
-    )
-    assert np.all(env.history == expected_history)
-    env.close()
-
-
 def test_no_reorder():
     from MPSPEnv import Env
 
@@ -72,18 +29,6 @@ def test_no_reorder():
     expected_bay = np.array(
         [
             [0, 0],
-            [3, 0],
-        ],
-        dtype=np.int32,
-    )
-    assert np.all(env.bay == expected_bay)
-
-    env.step(0)
-    env.step(1)
-    env.step(3)
-    expected_bay = np.array(
-        [
-            [3, 0],
             [3, 0],
         ],
         dtype=np.int32,

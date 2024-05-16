@@ -4,6 +4,7 @@
 extern "C"
 {
 #include "../src/bay.h"
+#include "../src/array.h"
 }
 
 // Define test struct to avoid having to allocate, and write to memory for each test
@@ -76,7 +77,7 @@ TEST(bay, add_container)
     int expected_min_container_per_column[] = {4, 1};
     int expected_mask[] = {
         1, 1,
-        0, 1};
+        0, 0};
     Expected_Bay expected_bay = {
         .R = R,
         .C = C,
@@ -104,7 +105,7 @@ TEST(bay, bay_add_container2)
     int expected_min_container_per_column[] = {1, 1};
     int expected_mask[] = {
         1, 1,
-        1, 1};
+        0, 0};
     Expected_Bay expected_bay = {
         .R = R,
         .C = C,
@@ -210,7 +211,7 @@ TEST(bay, bay_add_container3)
     int expected_min_container_per_column[] = {1, 1};
     int expected_mask[] = {
         1, 1,
-        1, 1};
+        0, 0};
 
     Expected_Bay expected_bay = {
         .R = R,
@@ -272,7 +273,7 @@ TEST(bay, bay_pop_container2)
     int expected_min_container_per_column[] = {4, 4, 4, 2, 1};
     int expected_mask[] = {
         1, 1, 1, 1, 0,
-        0, 0, 0, 1, 1};
+        0, 0, 0, 0, 0};
 
     Expected_Bay expected_bay = {
         .R = R,
@@ -299,4 +300,50 @@ TEST(bay, bay_pop_container2)
 
     check_bay_equals_expectation(bay, expected_bay);
     free_bay(bay);
+}
+
+TEST(bay, bay_sail_along_remove)
+{
+    int R = 3;
+    int C = 2;
+    int N = 4;
+    Bay bay = get_bay(R, C, N);
+    int container = 2;
+    int column = 0;
+    bay_add_container(bay, column, container, 1);
+    container = 1;
+    column = 0;
+    bay_add_container(bay, column, container, 1);
+
+    int expected_mask3[] = {
+        1, 1, 0, 0};
+    test_array_compare(bay.mask, expected_mask3);
+
+    Array reshuffled = bay_sail_along(bay, fake_callback, NULL);
+    int expected_reshuffled[] = {0, 0, 0, 0};
+    test_array_compare(reshuffled, expected_reshuffled);
+    int expected_column_counts[] = {0, 1};
+    int expected_matrix[] = {0, 0, 0, 0, 0, 1};
+    int expected_min_container_per_column[] = {4, 1};
+    int expected_mask[] = {
+        1, 1, 0, 1};
+    Expected_Bay expected_bay = {
+        .R = R,
+        .C = C,
+        .N = N,
+        .matrix = expected_matrix,
+        .column_counts = expected_column_counts,
+        .min_container_per_column = expected_min_container_per_column,
+        .mask = expected_mask};
+    check_bay_equals_expectation(bay, expected_bay);
+
+    int expected_mask2[] = {
+        1, 1, 0, 0};
+    container = 1;
+    column = 1;
+    bay_add_container(bay, column, container, 1);
+    test_array_compare(bay.mask, expected_mask2);
+
+    free_bay(bay);
+    free_array(reshuffled);
 }
