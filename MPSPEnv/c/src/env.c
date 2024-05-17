@@ -1,5 +1,6 @@
 #include "env.h"
 #include "play.h"
+#include "bay.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +38,43 @@ void initialize_history(Env *env, int track_history)
     }
 }
 
-Env get_random_env(int R, int C, int N, int skip_last_port, int track_history, int should_reorder)
+void update_extended_mask_entry(Env env, int i)
+{
+    // Action space is column major order:
+    // [c0r1, c0r2, c0r3, …, c0rR, c1r1, c1r2, …, cC-1rR]
+    int is_add = i < env.bay.C * env.bay.R;
+    int column = (i / env.bay.R) % env.bay.C;
+    int n_containers = i % env.bay.R + 1;
+    int n_to_place = env.T->matrix.values[env.T->last_non_zero_column];
+
+    if (is_add)
+        env.extended_mask.values[i] = (n_to_place >= n_containers) && (n_containers + containers_in_column(env.bay, column) <= env.bay.R);
+    else
+        env.extended_mask.values[i] = !env.bay.added_since_sailing.values[column] && (containers_in_column(env.bay, column) - n_containers >= 0);
+}
+
+void insert_extended_mask(Env env)
+{
+    for (int i = 0; i < env.extended_mask.n; i++)
+    {
+        update_extended_mask_entry(env, i);
+    }
+}
+
+void initialize_extended_mask(Env *env)
+{
+    if (env->is_extended)
+    {
+        env->extended_mask = get_zeros(2 * env->bay.R * env->bay.C);
+        insert_extended_mask(*env);
+    }
+    else
+    {
+        env->extended_mask = null_array();
+    }
+}
+
+Env get_random_env(int R, int C, int N, int skip_last_port, int track_history, int should_reorder, int is_extended)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -46,6 +83,7 @@ Env get_random_env(int R, int C, int N, int skip_last_port, int track_history, i
     env.bay = get_bay(R, C, N);
     env.T = get_random_transportation_matrix(N, R * C);
     env.skip_last_port = skip_last_port;
+    env.is_extended = is_extended;
 
     int upper_triangle_size = (N * (N - 1)) / 2;
     env.flat_T_matrix = get_zeros(upper_triangle_size);
@@ -53,10 +91,11 @@ Env get_random_env(int R, int C, int N, int skip_last_port, int track_history, i
     env.should_reorder = should_reorder;
     insert_flat_T_matrix(env);
     initialize_history(&env, track_history);
+    initialize_extended_mask(&env);
     return env;
 }
 
-Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int track_history, int should_reorder)
+Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int track_history, int should_reorder, int is_extended)
 {
     assert(R > 0 && C > 0 && N > 0);
     assert(skip_last_port == 0 || skip_last_port == 1);
@@ -65,6 +104,7 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int
     env.bay = get_bay(R, C, N);
     env.T = get_specific_transportation_matrix(N, T_matrix);
     env.skip_last_port = skip_last_port;
+    env.is_extended = is_extended;
 
     int upper_triangle_size = (N * (N - 1)) / 2;
     env.flat_T_matrix = get_zeros(upper_triangle_size);
@@ -72,6 +112,7 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int
     env.should_reorder = should_reorder;
     insert_flat_T_matrix(env);
     initialize_history(&env, track_history);
+    initialize_extended_mask(&env);
     return env;
 }
 
@@ -84,6 +125,13 @@ Env copy_env(Env env, int track_history)
     copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.one_hot_bay = copy_array(env.one_hot_bay);
     copy.should_reorder = env.should_reorder;
+    copy.is_extended = env.is_extended;
+
+    if (env.is_extended)
+        copy.extended_mask = copy_array(env.extended_mask);
+    else
+        copy.extended_mask = null_array();
+
     if (track_history)
     {
         copy.history = (char *)malloc(env.bay.R * env.bay.C * env.bay.R * env.bay.C * (env.T->N - 1) * sizeof(char));
@@ -126,6 +174,7 @@ void free_env(Env env)
     free_array(env.one_hot_bay);
     free(env.history);
     free(env.history_index);
+    free_array(env.extended_mask);
 }
 
 int get_add_reward(Env env, int column, int next_container)
@@ -175,19 +224,33 @@ void handle_sailing(Env env)
     }
 }
 
-int add_container(Env env, int column)
+int add_container(Env env, int action)
 {
-    int next_container = transportation_pop_container(env.T);
+    int column;
+    int n_containers;
+    if (env.is_extended)
+    {
+        column = (action / env.bay.R) % env.bay.C;
+        n_containers = action % env.bay.R + 1;
+    }
+    else
+    {
+        column = action;
+        n_containers = 1;
+    }
+
+    int next_container = transportation_pop_n_containers(env.T, n_containers);
     int reward = get_add_reward(env, column, next_container);
-    bay_add_containers(env.bay, column, next_container, 1, env.should_reorder);
+    bay_add_containers(env.bay, column, next_container, n_containers, env.should_reorder);
 
     handle_sailing(env);
 
     return reward;
 }
 
-int remove_container(Env env, int column)
+int remove_container(Env env, int action)
 {
+    int column = action - env.bay.C;
     int row = env.bay.R - env.bay.column_counts.values[column];
     backpropagate_reshuffle_in_history(row, column, &env);
 
@@ -255,14 +318,16 @@ void cleanup_history(Env env)
 
 void step_action(StepInfo *step_info, int action, Env env)
 {
-    int is_adding_container = action < env.bay.C;
+    int is_adding_container;
+    if (env.is_extended)
+        is_adding_container = action < env.bay.C * env.bay.R;
+    else
+        is_adding_container = action < env.bay.C;
+
     if (is_adding_container)
         step_info->reward = add_container(env, action);
     else
-    {
-        int column = action - env.bay.C;
-        step_info->reward = remove_container(env, column);
-    }
+        step_info->reward = remove_container(env, action);
 }
 
 // Action is in range [0, 2 * C)
@@ -270,14 +335,26 @@ void step_action(StepInfo *step_info, int action, Env env)
 // Action >= C: Remove container from column
 StepInfo step(Env env, int action)
 {
-    assert(action >= 0 && action < 2 * env.bay.C);
-    assert(env.bay.mask.values[action] == 1);
+    if (env.is_extended)
+    {
+        assert(action >= 0 && action < 2 * env.bay.C * env.bay.R);
+        assert(env.extended_mask.values[action] == 1);
+    }
+    else
+    {
+        assert(action >= 0 && action < 2 * env.bay.C);
+        assert(env.bay.mask.values[action] == 1);
+    }
 
     StepInfo step_info;
     step_action(&step_info, action, env);
     decide_is_terminated(&step_info, env);
 
     insert_flat_T_matrix(env);
+
+    if (env.is_extended)
+        insert_extended_mask(env);
+
     // insert_one_hot_bay(env);
     copy_bay_to_history(env);
 

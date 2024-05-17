@@ -174,6 +174,7 @@ void free_bay(Bay bay)
     free_array(bay.mask);
     free_array(bay.added_since_sailing);
 }
+
 void update_min_post_insertion(Bay bay, int column, int container)
 {
     if (container < *min_container_ref(bay, column))

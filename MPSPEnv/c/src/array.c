@@ -19,6 +19,14 @@ void print_array(Array array)
     printf("\n");
 }
 
+Array null_array()
+{
+    Array array;
+    array.values = NULL;
+    array.n = 0;
+    return array;
+}
+
 Array copy_array(Array array)
 {
     Array copy;

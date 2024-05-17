@@ -35,4 +35,5 @@ Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env);
 
 void bay_pop_containers(Bay bay, int column, int amount, int should_reorder);
 
+int containers_in_column(Bay bay, int column);
 #endif

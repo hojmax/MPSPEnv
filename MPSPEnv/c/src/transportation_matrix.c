@@ -68,11 +68,11 @@ void increment_matrix_and_port(Transportation_Info *T, int port, int container, 
     T->containers_left += n_containers;
 }
 
-void decrement_matrix_and_port(Transportation_Info *T, int port, int container)
+void decrement_matrix_and_port(Transportation_Info *T, int port, int container, int n_containers)
 {
-    T->matrix.values[port * T->N + container] -= 1;
-    T->containers_per_port.values[port] -= 1;
-    T->containers_left -= 1;
+    T->matrix.values[port * T->N + container] -= n_containers;
+    T->containers_per_port.values[port] -= n_containers;
+    T->containers_left -= n_containers;
 }
 
 void insert_containers(Transportation_Info *T, int container, int n_containers)
@@ -162,15 +162,16 @@ int no_containers_at_port(Transportation_Info *T)
     return T->containers_per_port.values[0] == 0;
 }
 
-int transportation_pop_container(Transportation_Info *T)
+int transportation_pop_n_containers(Transportation_Info *T, int n_containers)
 {
     assert(!is_last_port(T));
     assert(!no_containers_at_port(T));
     assert(T->last_non_zero_column >= 0);
+    assert(T->matrix.values[T->last_non_zero_column] >= n_containers);
 
     int container = T->last_non_zero_column;
 
-    decrement_matrix_and_port(T, 0, T->last_non_zero_column);
+    decrement_matrix_and_port(T, 0, T->last_non_zero_column, n_containers);
     insert_last_non_zero_column(T);
 
     T->containers_placed += 1;

@@ -32,7 +32,7 @@ void free_transportation_matrix(Transportation_Info *T);
 
 void transportation_sail_along(Transportation_Info *T);
 
-int transportation_pop_container(Transportation_Info *T);
+int transportation_pop_n_containers(Transportation_Info *T, int n_containers);
 
 void transportation_insert_container(Transportation_Info *T, int container);
 

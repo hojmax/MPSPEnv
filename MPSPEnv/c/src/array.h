@@ -31,4 +31,6 @@ void reorder_array(Array array, Array order);
 
 void reorder_matrix_columns(Array array, int w, int h, Array order);
 
+Array null_array();
+
 #endif

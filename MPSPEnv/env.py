@@ -54,6 +54,7 @@ class Env(gym.Env):
         speedy: bool = False,
         should_reorder: bool = True,
         track_history: bool = True,
+        is_extended: bool = False,
     ):
         super().__init__()
         assert R > 0, f"R must be positive but was {R}"
@@ -70,6 +71,7 @@ class Env(gym.Env):
         self.speedy = speedy
         self.should_reorder = should_reorder
         self.track_history = track_history
+        self.is_extended = is_extended
         self.action_probs = None
         self.total_reward = 0
         self._port_tracker = 0
@@ -325,6 +327,7 @@ class Env(gym.Env):
             int(self.skip_last_port),
             int(self.track_history),
             int(self.should_reorder),
+            int(self.is_extended),
         )
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
@@ -339,6 +342,7 @@ class Env(gym.Env):
             int(self.skip_last_port),
             int(self.track_history),
             int(self.should_reorder),
+            int(self.is_extended),
         )
 
     def __del__(self):
