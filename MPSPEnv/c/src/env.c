@@ -179,7 +179,7 @@ int add_container(Env env, int column)
 {
     int next_container = transportation_pop_container(env.T);
     int reward = get_add_reward(env, column, next_container);
-    bay_add_container(env.bay, column, next_container, env.should_reorder);
+    bay_add_containers(env.bay, column, next_container, 1, env.should_reorder);
 
     handle_sailing(env);
 
@@ -193,7 +193,7 @@ int remove_container(Env env, int column)
 
     int top_container = get_top_container(env.bay, column);
     int reward = get_remove_reward(env, column, top_container);
-    bay_pop_container(env.bay, column, env.should_reorder);
+    bay_pop_containers(env.bay, column, 1, env.should_reorder);
     transportation_insert_container(env.T, top_container);
     return reward;
 }

@@ -71,7 +71,7 @@ TEST(bay, add_container)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     int expected_column_counts[] = {0, 1};
     int expected_matrix[] = {0, 0, 0, 0, 0, 1};
     int expected_min_container_per_column[] = {4, 1};
@@ -90,7 +90,7 @@ TEST(bay, add_container)
     free_bay(bay);
 }
 
-TEST(bay, bay_add_container2)
+TEST(bay, bay_add_containers2)
 {
     int R = 3;
     int C = 2;
@@ -98,8 +98,8 @@ TEST(bay, bay_add_container2)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     int expected_column_counts[] = {1, 1};
     int expected_matrix[] = {0, 0, 0, 0, 1, 1};
     int expected_min_container_per_column[] = {1, 1};
@@ -130,8 +130,8 @@ TEST(bay, bay_sail_along)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     Array reshuffled = bay_sail_along(bay, fake_callback, NULL);
     int expected_reshuffled[] = {0, 0, 0, 0};
     test_array_compare(reshuffled, expected_reshuffled);
@@ -161,14 +161,14 @@ TEST(bay, bay_sail_along2)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     container = 2;
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     column = 1;
     container = 1;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     Array reshuffled = bay_sail_along(bay, fake_callback, NULL);
     int expected_reshuffled[] = {0, 2, 0, 0};
     test_array_compare(reshuffled, expected_reshuffled);
@@ -190,7 +190,7 @@ TEST(bay, bay_sail_along2)
     free_array(reshuffled);
 }
 
-TEST(bay, bay_add_container3)
+TEST(bay, bay_add_containers3)
 {
     int R = 3;
     int C = 2;
@@ -198,14 +198,14 @@ TEST(bay, bay_add_container3)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     container = 2;
     column = 1;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     container = 3;
     column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     int expected_column_counts[] = {2, 2};
     int expected_matrix[] = {0, 0, 2, 3, 1, 1};
     int expected_min_container_per_column[] = {1, 1};
@@ -225,7 +225,7 @@ TEST(bay, bay_add_container3)
     free_bay(bay);
 }
 
-TEST(bay, bay_pop_container)
+TEST(bay, bay_pop_containers)
 {
     int R = 3;
     int C = 5;
@@ -252,15 +252,15 @@ TEST(bay, bay_pop_container)
     Bay bay = get_bay(R, C, N);
     int container = 1;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     column = 4;
-    bay_pop_container(bay, column, 1);
+    bay_pop_containers(bay, column, 1, 1);
 
     check_bay_equals_expectation(bay, expected_bay);
     free_bay(bay);
 }
 
-TEST(bay, bay_pop_container2)
+TEST(bay, bay_pop_containers2)
 {
     int R = 3;
     int C = 5;
@@ -287,16 +287,16 @@ TEST(bay, bay_pop_container2)
     Bay bay = get_bay(R, C, N);
     int container = 2;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     column = 3;
     container = 3;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     column = 4;
     container = 1;
-    bay_add_container(bay, column, container, 1);
-    bay_pop_container(bay, column, 1);
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_pop_containers(bay, column, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
 
     check_bay_equals_expectation(bay, expected_bay);
     free_bay(bay);
@@ -310,10 +310,10 @@ TEST(bay, bay_sail_along_remove)
     Bay bay = get_bay(R, C, N);
     int container = 2;
     int column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     container = 1;
     column = 0;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
 
     int expected_mask3[] = {
         1, 1, 0, 0};
@@ -341,9 +341,140 @@ TEST(bay, bay_sail_along_remove)
         1, 1, 0, 0};
     container = 1;
     column = 1;
-    bay_add_container(bay, column, container, 1);
+    bay_add_containers(bay, column, container, 1, 1);
     test_array_compare(bay.mask, expected_mask2);
 
     free_bay(bay);
     free_array(reshuffled);
+}
+
+TEST(bay, bay_pop_containers3)
+{
+    int R = 3;
+    int C = 5;
+    int N = 4;
+    int expected_matrix[] = {
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 2, 2};
+    int expected_column_counts[] = {0, 0, 0, 1, 1};
+    int expected_min_container_per_column[] = {4, 4, 4, 2, 2};
+    int expected_mask[] = {
+        1, 1, 1, 1, 1,
+        0, 0, 0, 0, 0};
+
+    Expected_Bay expected_bay = {
+        .R = R,
+        .C = C,
+        .N = N,
+        .matrix = expected_matrix,
+        .column_counts = expected_column_counts,
+        .min_container_per_column = expected_min_container_per_column,
+        .mask = expected_mask};
+
+    Bay bay = get_bay(R, C, N);
+    int container = 2;
+    int column = 0;
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 3;
+    container = 3;
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 4;
+    container = 1;
+
+    bay_add_containers(bay, column, container, 1, 1);
+
+    bay_pop_containers(bay, column, 2, 1);
+
+    check_bay_equals_expectation(bay, expected_bay);
+    free_bay(bay);
+}
+
+TEST(bay, bay_pop_containers4)
+{
+    int R = 3;
+    int C = 5;
+    int N = 4;
+    int expected_matrix[] = {
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 2};
+    int expected_column_counts[] = {0, 0, 0, 0, 1};
+    int expected_min_container_per_column[] = {4, 4, 4, 4, 2};
+    int expected_mask[] = {
+        1, 1, 1, 1, 1,
+        0, 0, 0, 0, 0};
+
+    Expected_Bay expected_bay = {
+        .R = R,
+        .C = C,
+        .N = N,
+        .matrix = expected_matrix,
+        .column_counts = expected_column_counts,
+        .min_container_per_column = expected_min_container_per_column,
+        .mask = expected_mask};
+
+    Bay bay = get_bay(R, C, N);
+    int container = 2;
+    int column = 0;
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 3;
+    container = 3;
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 4;
+    container = 1;
+
+    bay_add_containers(bay, column, container, 1, 1);
+
+    bay_pop_containers(bay, column, 3, 1);
+
+    check_bay_equals_expectation(bay, expected_bay);
+    free_bay(bay);
+}
+
+TEST(bay, bay_pop_containers5)
+{
+    int R = 3;
+    int C = 5;
+    int N = 4;
+    int expected_matrix[] = {
+        0, 0, 0, 1, 0,
+        0, 0, 0, 1, 0,
+        0, 0, 0, 1, 2};
+    int expected_column_counts[] = {0, 0, 0, 3, 1};
+    int expected_min_container_per_column[] = {4, 4, 4, 1, 2};
+    int expected_mask[] = {
+        1, 1, 1, 0, 1,
+        0, 0, 0, 0, 0};
+
+    Expected_Bay expected_bay = {
+        .R = R,
+        .C = C,
+        .N = N,
+        .matrix = expected_matrix,
+        .column_counts = expected_column_counts,
+        .min_container_per_column = expected_min_container_per_column,
+        .mask = expected_mask};
+
+    Bay bay = get_bay(R, C, N);
+    int container = 2;
+    int column = 0;
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 3;
+    container = 3;
+    bay_add_containers(bay, column, container, 1, 1);
+    column = 4;
+    container = 1;
+
+    bay_add_containers(bay, column, container, 1, 1);
+    bay_pop_containers(bay, column, 3, 1);
+
+    column = 3;
+    bay_add_containers(bay, column, container, 3, 1);
+
+    check_bay_equals_expectation(bay, expected_bay);
+    free_bay(bay);
 }

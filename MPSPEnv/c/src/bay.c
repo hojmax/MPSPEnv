@@ -182,11 +182,14 @@ void update_min_post_insertion(Bay bay, int column, int container)
     }
 }
 
-void insert_container_into_column(Bay bay, int column, int container)
+void insert_containers_into_column(Bay bay, int column, int amount, int container)
 {
-    int row = bay.R - containers_in_column(bay, column) - 1;
-    bay.matrix.values[row * bay.C + column] = container;
-    bay.column_counts.values[column]++;
+    for (int i = 0; i < amount; i++)
+    {
+        int row = bay.R - containers_in_column(bay, column) - 1 - i;
+        bay.matrix.values[row * bay.C + column] = container;
+    }
+    bay.column_counts.values[column] += amount;
 }
 
 Array get_lexicographic_column_order(Bay bay, int first_affected_row)
@@ -225,11 +228,11 @@ void reorder_bay(Bay bay, int first_affected_row)
     free_array(correct_column_order);
 }
 
-void bay_add_container(Bay bay, int column, int container, int should_reorder)
+void bay_add_containers(Bay bay, int column, int container, int amount, int should_reorder)
 {
     assert(column >= 0 && column < bay.C);
-    assert(containers_in_column(bay, column) < bay.R);
-    insert_container_into_column(bay, column, container);
+    assert(containers_in_column(bay, column) + amount <= bay.R);
+    insert_containers_into_column(bay, column, amount, container);
     update_min_post_insertion(bay, column, container);
     bay.added_since_sailing.values[column] = 1;
     update_column_mask(bay, column);
@@ -249,16 +252,23 @@ int get_top_container(Bay bay, int column)
     return bay.matrix.values[index];
 }
 
-int pop_container_from_column(Bay bay, int column)
+int pop_containers_from_column(Bay bay, int column, int amount)
 {
-    int row = bay.R - containers_in_column(bay, column);
-    int index = row * bay.C + column;
-    int container = bay.matrix.values[index];
+    int min_container = bay.N;
+    for (int i = 0; i < amount; i++)
+    {
+        int row = bay.R - containers_in_column(bay, column) + i;
+        int index = row * bay.C + column;
+        int container = bay.matrix.values[index];
 
-    bay.matrix.values[index] = 0;
-    bay.column_counts.values[column]--;
+        if (container < min_container)
+            min_container = container;
 
-    return container;
+        bay.matrix.values[index] = 0;
+    }
+
+    bay.column_counts.values[column] -= amount;
+    return min_container;
 }
 
 // Assumes the container would be placed at the top of the column
@@ -281,12 +291,12 @@ void update_min_post_removal(Bay bay, int column, int container)
     *min_container_ref(bay, column) = find_min_container_in_column(bay, column);
 }
 
-void bay_pop_container(Bay bay, int column, int should_reorder)
+void bay_pop_containers(Bay bay, int column, int amount, int should_reorder)
 {
     assert(column >= 0 && column < bay.C);
-    assert(containers_in_column(bay, column) > 0);
-    int container = pop_container_from_column(bay, column);
-    update_min_post_removal(bay, column, container);
+    assert(containers_in_column(bay, column) - amount >= 0);
+    int min_container = pop_containers_from_column(bay, column, amount);
+    update_min_post_removal(bay, column, min_container);
     update_column_mask(bay, column);
 
     if (should_reorder)

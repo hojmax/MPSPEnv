@@ -29,10 +29,10 @@ int is_container_blocking(Bay bay, int column, int container);
 
 int get_top_container(Bay bay, int column);
 
-void bay_add_container(Bay bay, int column, int container, int should_reorder);
+void bay_add_containers(Bay bay, int column, int container, int amount, int should_reorder);
 
 Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env);
 
-void bay_pop_container(Bay bay, int column, int should_reorder);
+void bay_pop_containers(Bay bay, int column, int amount, int should_reorder);
 
 #endif
