@@ -16,7 +16,6 @@ typedef struct Bay
     Array min_container_per_column;
     Array column_counts;
     Array added_since_sailing;
-    Array mask;
 } Bay;
 
 Bay get_bay(int R, int C, int N);
@@ -27,13 +26,11 @@ Bay copy_bay(Bay bay);
 
 int is_container_blocking(Bay bay, int column, int container);
 
-int get_top_container(Bay bay, int column);
-
 void bay_add_containers(Bay bay, int column, int container, int amount, int should_reorder);
 
-Array bay_sail_along(Bay bay, ReshuffleCallback callback, Env *env);
+Array bay_sail_along(Bay bay, Env *env);
 
-void bay_pop_containers(Bay bay, int column, int amount, int should_reorder);
+Array bay_pop_containers(Bay bay, int column, int amount, int should_reorder);
 
 int containers_in_column(Bay bay, int column);
 #endif

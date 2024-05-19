@@ -20,7 +20,6 @@ class Bay(Structure):
         ("min_container_per_column", Array),
         ("column_counts", Array),
         ("added_since_sailing", Array),
-        ("mask", Array),
     ]
 
 
@@ -41,14 +40,10 @@ class Env(Structure):
     _fields_ = [
         ("T", POINTER(Transportation_Info)),
         ("bay", Bay),
-        ("one_hot_bay", Array),
         ("flat_T_matrix", Array),
-        ("extended_mask", Array),
+        ("mask", Array),
         ("skip_last_port", c_int),
         ("should_reorder", c_int),
-        ("is_extended", c_int),
-        ("history_index", POINTER(c_int)),
-        ("history", POINTER(c_char)),
     ]
 
 
@@ -71,19 +66,10 @@ c_lib = ctypes.CDLL(c_lib_path)
 c_lib.step.argtypes = [Env, c_int]
 c_lib.step.restype = StepInfo
 
-c_lib.get_random_env.argtypes = [c_int, c_int, c_int, c_int, c_int, c_int, c_int]
+c_lib.get_random_env.argtypes = [c_int, c_int, c_int, c_int, c_int]
 c_lib.get_random_env.restype = Env
 
-c_lib.get_specific_env.argtypes = [
-    c_int,
-    c_int,
-    c_int,
-    POINTER(c_int),
-    c_int,
-    c_int,
-    c_int,
-    c_int,
-]
+c_lib.get_specific_env.argtypes = [c_int, c_int, c_int, POINTER(c_int), c_int, c_int]
 c_lib.get_specific_env.restype = Env
 
 c_lib.free_env.argtypes = [Env]
@@ -93,6 +79,3 @@ c_lib.set_seed.argtypes = [c_int]
 
 c_lib.copy_env.argtypes = [Env, c_int]
 c_lib.copy_env.restype = Env
-
-c_lib.get_moves_upper_bound.argtypes = [Env]
-c_lib.get_moves_upper_bound.restype = c_int

@@ -1,1 +1,1 @@
-from MPSPEnv.env import Env
+from MPSPEnv.env import Env, ActionNotAllowed
