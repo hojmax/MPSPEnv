@@ -6,12 +6,21 @@ from helpers import run_env_against_rollout, get_rollouts, recreate_env
 
 @pytest.fixture(scope="session", autouse=True)
 def build_env():
-    subprocess.run("cd MPSPEnv && make build", shell=True)  # Setup
+    subprocess.run("make build", shell=True)  # Setup
     yield
-    subprocess.run("cd MPSPEnv && make clean", shell=True)  # Teardown
+    subprocess.run("make clean", shell=True)  # Teardown
 
 
-def test_basic():
+def test_cpputest_suite():
+    result = subprocess.run(
+        "make test", shell=True, capture_output=True, text=True
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0, "CppUTest suite failed"
+
+
+def test_reset_to_transportation():
     from MPSPEnv import Env
 
     env = Env(2, 2, 4, skip_last_port=True, should_reorder=False)
@@ -39,16 +48,7 @@ def test_basic():
     env.close()
 
 
-def test_cpputest_suite():
-    result = subprocess.run(
-        "cd MPSPEnv && make test", shell=True, capture_output=True, text=True
-    )
-    print(result.stdout)
-    print(result.stderr)
-    assert result.returncode == 0, "CppUTest suite failed"
-
-
-def test_local_plans():
+def test_rollouts():
     rollouts = get_rollouts()
 
     for rollout in rollouts:
