@@ -4,6 +4,7 @@ import numpy as np
 import subprocess
 import re
 import json
+import argparse
 
 
 def setup():
@@ -43,6 +44,13 @@ def string_to_action(action, R, C):
         return column * R + n_containers - 1
 
 
+def action_to_string(action, R, C):
+    if action >= R * C:
+        return f"r{action % R + 1}c{(action - R * C) // R}"
+    else:
+        return f"a{action % R + 1}c{action // R}"
+
+
 def print_snapshot(snapshot):
     print("Bay:")
     for row in snapshot["bay"]:
@@ -52,6 +60,15 @@ def print_snapshot(snapshot):
         print(row)
     print("Mask:")
     print(snapshot["mask"])
+
+    print("Valid actions:")
+    for action, is_valid in enumerate(snapshot["mask"]):
+        if is_valid == 1:
+            print(
+                action_to_string(action, len(snapshot["bay"]), len(snapshot["bay"][0])),
+                end=" ",
+            )
+    print()
 
 
 def run_interactive_game(env):
@@ -84,7 +101,7 @@ def run_interactive_game(env):
 
 def save_states(states, settings, seed, filename):
     with open(filename, "w") as f:
-        json.dump({"states": states, "settings": settings, "seed": seed}, f)
+        json.dump({"settings": settings, "seed": seed, "states": states}, f)
 
 
 def set_path():
@@ -92,24 +109,50 @@ def set_path():
     sys.path.insert(0, local_env_path)
 
 
+def get_filename(settings, seed):
+    return f"rollout_R{settings['R']}C{settings['C']}N{settings['N']}seed{seed}.json"
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description="Run the MPSP environment with specified settings."
+    )
+    parser.add_argument("--R", type=int, default=8, help="Number of rows")
+    parser.add_argument("--C", type=int, default=8, help="Number of columns")
+    parser.add_argument("--N", type=int, default=8, help="Number of containers")
+    parser.add_argument(
+        "--auto_move", type=bool, default=False, help="Enable auto_move (True/False)"
+    )
+    parser.add_argument(
+        "--speedy", type=bool, default=True, help="Enable speedy mode (True/False)"
+    )
+    parser.add_argument("--seed", type=int, default=0, help="Random seed")
+
+    args = parser.parse_args()
+
+    return args
+
+
 if __name__ == "__main__":
+    args = get_args()
+
     setup()
     set_path()
     from MPSPEnv import Env, ActionNotAllowed
 
     settings = {
-        "R": 2,
-        "C": 2,
-        "N": 4,
-        "auto_move": False,
-        "speedy": True,
+        "R": args.R,
+        "C": args.C,
+        "N": args.N,
+        "auto_move": args.auto_move,
+        "speedy": args.speedy,
     }
-    seed = 0
+    seed = args.seed
 
     env = Env(**settings)
     env.reset(seed)
     states = run_interactive_game(env)
-    save_states(states, settings, seed, "new_rollout.json")
+    save_states(states, settings, seed, get_filename(settings, seed))
     env.close()
 
     teardown()

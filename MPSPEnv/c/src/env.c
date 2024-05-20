@@ -154,6 +154,8 @@ Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
     env.bay = get_bay(R, C, N);
     env.T = T;
     env.mask = get_zeros(2 * env.bay.R * env.bay.C);
+    env.total_reward = malloc(sizeof(int));
+    *env.total_reward = 0;
     initialize_flat_T(&env, N);
     insert_flat_T_matrix(env);
 
@@ -181,11 +183,13 @@ Env get_specific_env(int R, int C, int N, int *T_matrix, int auto_move)
 Env copy_env(Env env)
 {
     Env copy;
-    copy.bay = copy_bay(env.bay);
     copy.T = copy_transportation_info(env.T);
-    copy.auto_move = env.auto_move;
+    copy.bay = copy_bay(env.bay);
     copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.mask = copy_array(env.mask);
+    copy.auto_move = env.auto_move;
+    copy.total_reward = malloc(sizeof(int));
+    *copy.total_reward = *env.total_reward;
 
     return copy;
 }
@@ -196,6 +200,7 @@ void free_env(Env env)
     free_transportation_matrix(env.T);
     free_array(env.flat_T_matrix);
     free_array(env.mask);
+    free(env.total_reward);
 }
 
 int get_add_reward(Env env, int column, int next_container)
@@ -253,19 +258,20 @@ int remove_container(Env env, int action)
     return reward;
 }
 
-void decide_is_terminated(StepInfo *step_info, Env env)
+int decide_is_terminated(Env env)
 {
-    step_info->is_terminal = env.T->current_port >= env.T->N - 1;
+    return env.T->current_port >= env.T->N - 1;
 }
 
-void step_action(StepInfo *step_info, int action, Env env)
+// Returns reward
+int step_action(Env env, int action)
 {
     int is_adding_container = action < env.bay.C * env.bay.R;
 
     if (is_adding_container)
-        step_info->reward = add_container(env, action);
+        return add_container(env, action);
     else
-        step_info->reward = remove_container(env, action);
+        return remove_container(env, action);
 }
 
 StepInfo step(Env env, int action)
@@ -273,8 +279,9 @@ StepInfo step(Env env, int action)
     assert(action >= 0 && action < 2 * env.bay.C * env.bay.R);
     assert(env.mask.values[action] == 1);
     StepInfo step_info;
-    step_action(&step_info, action, env);
-    decide_is_terminated(&step_info, env);
+    step_info.reward = step_action(env, action);
+    step_info.is_terminal = decide_is_terminated(env);
+    *env.total_reward += step_info.reward;
 
     insert_flat_T_matrix(env);
     int only_legal_action = insert_mask(env);

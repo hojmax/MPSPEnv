@@ -45,6 +45,7 @@ class Env(Structure):
         ("flat_T_matrix", Array),
         ("mask", Array),
         ("auto_move", c_int),
+        ("total_reward", POINTER(c_int)),
     ]
 
 
