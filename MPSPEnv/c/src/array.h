@@ -33,4 +33,8 @@ void reorder_matrix_columns(Array array, int w, int h, Array order);
 
 Array null_array();
 
+void fill_array(Array array, int value);
+
+int get_max(Array array);
+
 #endif

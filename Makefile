@@ -12,7 +12,7 @@ TEST_OBJS := $(patsubst %.c, %_test.o, $(wildcard MPSPEnv/c/src/*.c))
 BUILD_OBJS := $(patsubst %.c, %_build.o, $(wildcard MPSPEnv/c/src/*.c))
 
 # Compile and run tests
-test: $(TEST_OBJS)
+cpputest: $(TEST_OBJS)
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CFLAGS) -o unit_test MPSPEnv/c/tests/*.cpp $^ $(LD_LIBRARIES)
 	@./unit_test -c
 
@@ -28,8 +28,8 @@ build: $(BUILD_OBJS)
 %_build.o: %.c %.h
 	@gcc -fPIC -c -O3 -DNDEBUG $< -o $@
 
-pytest:
-	@/opt/homebrew/bin/python3.11 -m pytest tests/ -W ignore::DeprecationWarning
+test:
+	@/opt/homebrew/bin/python3.11 -m pytest -q tests/ -W ignore::DeprecationWarning
 
 clean:
 	@rm -f MPSPEnv/c/src/*.o

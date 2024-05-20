@@ -2,6 +2,7 @@
 #include "sort.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int containers_in_column(Bay bay, int column)
 {
@@ -24,10 +25,15 @@ Bay copy_bay(Bay bay)
     copy.R = bay.R;
     copy.C = bay.C;
     copy.N = bay.N;
+    copy.right_most_added_column = malloc(sizeof(int));
+    *copy.right_most_added_column = *bay.right_most_added_column;
+    copy.left_most_removed_column = malloc(sizeof(int));
+    *copy.left_most_removed_column = *bay.left_most_removed_column;
+    copy.added_since_sailing = malloc(sizeof(int));
+    *copy.added_since_sailing = *bay.added_since_sailing;
     copy.matrix = copy_array(bay.matrix);
     copy.min_container_per_column = copy_array(bay.min_container_per_column);
     copy.column_counts = copy_array(bay.column_counts);
-    copy.added_since_sailing = copy_array(bay.added_since_sailing);
     return copy;
 }
 
@@ -106,12 +112,61 @@ void decrement_bay(Bay bay)
     }
 }
 
-void reset_added_since_sailing(Bay bay)
+void reset_right_most_added_column(Bay bay)
 {
-    for (int i = 0; i < bay.C; i++)
+    *bay.right_most_added_column = bay.C;
+}
+
+void reset_pointer_values(Bay bay)
+{
+    reset_right_most_added_column(bay);
+    *bay.left_most_removed_column = -1;
+    *bay.added_since_sailing = 0;
+}
+
+void update_left_most_removed_column(Bay bay, int column)
+{
+    if (column > *bay.left_most_removed_column)
+        *bay.left_most_removed_column = column;
+    else
+        assert(0);
+}
+
+void update_right_most_added_column(Bay bay, int column)
+{
+    if (column < *bay.right_most_added_column)
+        *bay.right_most_added_column = column;
+    else
+        assert(0);
+}
+
+Array sort_lexicographic_order(Bay bay, Array column_order, int first_affected_row)
+{
+    for (int i = first_affected_row; i < bay.R; i++)
     {
-        bay.added_since_sailing.values[i] = 0;
+        int *row_values = bay.matrix.values + i * bay.C;
+        Array row_array = array_from_ints_shallow_copy(row_values, bay.C);
+        sort_indexes_using_values(column_order, row_array);
     }
+}
+
+Array get_column_order(Bay bay)
+{
+    Array column_order = get_range(0, bay.C);
+    sort_lexicographic_order(bay, column_order, bay.R - get_max(bay.column_counts));
+    sort_indexes_using_values(column_order, bay.column_counts);
+    return column_order;
+}
+
+void reorder_bay(Bay bay)
+{
+    Array new_column_order = get_column_order(bay);
+
+    reorder_matrix_columns(bay.matrix, bay.C, bay.R, new_column_order);
+    reorder_array(bay.min_container_per_column, new_column_order);
+    reorder_array(bay.column_counts, new_column_order);
+
+    free_array(new_column_order);
 }
 
 // Offloads all containers going to current port (always 1)
@@ -124,7 +179,9 @@ Array bay_sail_along(Bay bay, Env *env)
     reshuffled.values[1] = 0;
     // And also decrement the reshuffled containers
     shift_array_left(reshuffled, 1);
-    reset_added_since_sailing(bay);
+    reset_pointer_values(bay);
+    reorder_bay(bay);
+
     return reshuffled;
 }
 
@@ -134,21 +191,26 @@ Bay get_bay(int R, int C, int N)
     bay.R = R;
     bay.C = C;
     bay.N = N;
+    bay.right_most_added_column = malloc(sizeof(int));
+    bay.left_most_removed_column = malloc(sizeof(int));
+    bay.added_since_sailing = malloc(sizeof(int));
     bay.matrix = get_zeros(R * C);
     // Initialize to max value + 1
     bay.min_container_per_column = get_full(C, N);
     bay.column_counts = get_zeros(C);
-    bay.added_since_sailing = get_zeros(C);
+    reset_pointer_values(bay);
 
     return bay;
 }
 
 void free_bay(Bay bay)
 {
+    free(bay.right_most_added_column);
+    free(bay.left_most_removed_column);
+    free(bay.added_since_sailing);
     free_array(bay.matrix);
     free_array(bay.min_container_per_column);
     free_array(bay.column_counts);
-    free_array(bay.added_since_sailing);
 }
 
 void update_min_post_insertion(Bay bay, int column, int container)
@@ -169,45 +231,15 @@ void insert_containers_into_column(Bay bay, int column, int amount, int containe
     bay.column_counts.values[column] += amount;
 }
 
-Array get_lexicographic_column_order(Bay bay, int first_affected_row)
-{
-    Array column_order = get_range(0, bay.C);
-
-    // You only need to check the first affected row and down
-    for (int i = first_affected_row; i < bay.R; i++)
-    {
-        int *row_values = bay.matrix.values + i * bay.C;
-        Array row_array = array_from_ints_shallow_copy(row_values, bay.C);
-        sort_indexes_using_values(column_order, row_array);
-    }
-
-    return column_order;
-}
-
-void reorder_bay(Bay bay, int first_affected_row)
-{
-    Array correct_column_order = get_lexicographic_column_order(bay, first_affected_row);
-
-    reorder_matrix_columns(bay.matrix, bay.C, bay.R, correct_column_order);
-    reorder_array(bay.min_container_per_column, correct_column_order);
-    reorder_array(bay.column_counts, correct_column_order);
-    reorder_array(bay.added_since_sailing, correct_column_order);
-
-    free_array(correct_column_order);
-}
-
-void bay_add_containers(Bay bay, int column, int container, int amount, int should_reorder)
+void bay_add_containers(Bay bay, int column, int container, int amount)
 {
     assert(column >= 0 && column < bay.C);
     assert(containers_in_column(bay, column) + amount <= bay.R);
     insert_containers_into_column(bay, column, amount, container);
     update_min_post_insertion(bay, column, container);
-    bay.added_since_sailing.values[column] = 1;
-    if (should_reorder)
-    {
-        int first_affected_row = bay.R - containers_in_column(bay, column);
-        reorder_bay(bay, first_affected_row);
-    }
+    *bay.added_since_sailing = 1;
+    update_right_most_added_column(bay, column);
+    reorder_bay(bay);
 }
 
 Array pop_containers_from_column(Bay bay, int column, int amount)
@@ -239,18 +271,14 @@ void update_min_post_removal(Bay bay, int column)
     *min_container_ref(bay, column) = find_min_container_in_column(bay, column);
 }
 
-Array bay_pop_containers(Bay bay, int column, int amount, int should_reorder)
+Array bay_pop_containers(Bay bay, int column, int amount)
 {
     assert(column >= 0 && column < bay.C);
     assert(containers_in_column(bay, column) - amount >= 0);
     Array reshuffled = pop_containers_from_column(bay, column, amount);
     update_min_post_removal(bay, column);
-
-    if (should_reorder)
-    {
-        int first_affected_row = bay.R - containers_in_column(bay, column) - 1;
-        reorder_bay(bay, first_affected_row);
-    }
+    update_left_most_removed_column(bay, column);
+    reorder_bay(bay);
 
     return reshuffled;
 }

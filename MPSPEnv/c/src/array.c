@@ -101,6 +101,28 @@ void shift_array_left(Array array, int n_shifts)
     }
 }
 
+void fill_array(Array array, int value)
+{
+    for (int i = 0; i < array.n; i++)
+    {
+        array.values[i] = value;
+    }
+}
+
+int get_max(Array array)
+{
+    assert(array.n > 0);
+    int max = array.values[0];
+    for (int i = 1; i < array.n; i++)
+    {
+        if (array.values[i] > max)
+        {
+            max = array.values[i];
+        }
+    }
+    return max;
+}
+
 Array array_from_ints(int *values, int n)
 {
     Array array;

@@ -12,9 +12,7 @@ def build_env():
 
 
 def test_cpputest_suite():
-    result = subprocess.run(
-        "make test", shell=True, capture_output=True, text=True
-    )
+    result = subprocess.run("make cpputest", shell=True, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
     assert result.returncode == 0, "CppUTest suite failed"
@@ -23,27 +21,21 @@ def test_cpputest_suite():
 def test_reset_to_transportation():
     from MPSPEnv import Env
 
-    env = Env(2, 2, 4, skip_last_port=True, should_reorder=False)
-    env.reset_to_transportation(
-        np.array(
-            [
-                [0, 2, 0, 2],
-                [0, 0, 2, 0],
-                [0, 0, 0, 2],
-                [0, 0, 0, 0],
-            ],
-            dtype=np.int32,
-        ),
-    )
-    env.step(0)
-    expected_bay = np.array(
+    env = Env(2, 2, 4, auto_move=False)
+    T = np.array(
         [
-            [0, 0],
-            [3, 0],
+            [0, 2, 0, 2],
+            [0, 0, 2, 0],
+            [0, 0, 0, 2],
+            [0, 0, 0, 0],
         ],
         dtype=np.int32,
     )
-    assert np.all(env.bay == expected_bay)
+    env.reset_to_transportation(T)
+
+    assert np.all(env.bay == np.zeros((2, 2)))
+    assert np.all(env.T == T)
+    assert np.all(env.mask == np.array([0, 0, 1, 1, 0, 0, 0, 0]))
 
     env.close()
 

@@ -10,8 +10,8 @@ typedef struct Env
     Bay bay;
     Array flat_T_matrix;
     Array mask;
-    int skip_last_port;
-    int should_reorder;
+    int auto_move;
+    int *total_reward;
 } Env;
 
 typedef struct StepInfo
@@ -24,9 +24,9 @@ StepInfo step(Env env, int action);
 
 Env copy_env(Env env);
 
-Env get_random_env(int R, int C, int N, int skip_last_port, int should_reorder);
+Env get_random_env(int R, int C, int N, int auto_move);
 
-Env get_specific_env(int R, int C, int N, int *T_matrix, int skip_last_port, int should_reorder);
+Env get_specific_env(int R, int C, int N, int *T_matrix, int auto_move);
 
 void free_env(Env env);
 

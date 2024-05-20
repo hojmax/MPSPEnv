@@ -7,11 +7,11 @@ import json
 
 
 def setup():
-    subprocess.run("cd MPSPEnv && make build", shell=True)
+    subprocess.run("make build", shell=True)
 
 
 def teardown():
-    subprocess.run("cd MPSPEnv && make clean", shell=True)
+    subprocess.run("make clean", shell=True)
 
 
 def take_snapshot(env, action=None):
@@ -57,7 +57,7 @@ def print_snapshot(snapshot):
 def run_interactive_game(env):
     states = [take_snapshot(env)]
     print(
-        "Actions follow the format ^[r|a](\d+)c(\d+)$. E.g. r1c0 for removing 1 container from column 0, or a3c2 for adding 3 containers to column 2"
+        "Actions follow the format ^[r|a](\d+)c(\d+)$. E.g. r1c0 for removing 1 container from column 0, or a3c2 for adding 3 containers to column 2. Columns are zero-indexed."
     )
     print("Initial state:")
     print_snapshot(take_snapshot(env))
@@ -101,9 +101,7 @@ if __name__ == "__main__":
         "R": 2,
         "C": 2,
         "N": 4,
-        "skip_last_port": False,
-        "take_first_action": False,
-        "should_reorder": True,
+        "auto_move": False,
         "speedy": True,
     }
     seed = 0

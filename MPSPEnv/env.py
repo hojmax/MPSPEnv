@@ -39,9 +39,6 @@ class Env(gym.Env):
     - R: number of rows in the bay
     - C: number of columns in the bay
     - N: number of ports
-    - skip_last_port: whether to terminate episodes at the second to last port (default: False)
-    - take_first_action: whether to automaticlly place the first container of every episode (default: False)
-    - should_reorder: whether to reorder the columns of the bay to lexicographical order after each step (default: True)
     """
 
     def __init__(
@@ -49,9 +46,7 @@ class Env(gym.Env):
         R: int,
         C: int,
         N: int,
-        skip_last_port: bool = False,
-        take_first_action: bool = False,
-        should_reorder: bool = True,
+        auto_move: bool = False,
         speedy: bool = False,
     ):
         super().__init__()
@@ -63,9 +58,7 @@ class Env(gym.Env):
         self.N = N
         self._env = None
         self.visualizer = None
-        self.skip_last_port = skip_last_port
-        self.take_first_action = take_first_action
-        self.should_reorder = should_reorder
+        self.auto_move = auto_move
         self.speedy = speedy
         self.action_probs = None
         self.total_reward = 0
@@ -95,9 +88,8 @@ class Env(gym.Env):
             R=self.R,
             C=self.C,
             N=self.N,
-            skip_last_port=self.skip_last_port,
-            take_first_action=self.take_first_action,
-            should_reorder=self.should_reorder,
+            auto_move=self.auto_move,
+            speedy=self.speedy,
         )
         new_env._env = c_lib.copy_env(self._env)
         new_env.total_reward = self.total_reward
@@ -112,9 +104,6 @@ class Env(gym.Env):
         self._set_stores()
         self._reset_constants()
 
-        if self.take_first_action:
-            self.step(0)
-
         if self.speedy:
             return None
         else:
@@ -125,9 +114,6 @@ class Env(gym.Env):
         self._reset_specific_c_env(transportation)
         self._set_stores()
         self._reset_constants()
-
-        if self.take_first_action:
-            self.step(0)
 
         if self.speedy:
             return None
@@ -251,7 +237,7 @@ class Env(gym.Env):
             c_lib.set_seed(np.random.randint(0, 2**32))
 
         self._env = c_lib.get_random_env(
-            self.R, self.C, self.N, int(self.skip_last_port), int(self.should_reorder)
+            self.R, self.C, self.N, int(self.auto_move)
         )
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
@@ -263,8 +249,7 @@ class Env(gym.Env):
             self.C,
             self.N,
             transportation.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
-            int(self.skip_last_port),
-            int(self.should_reorder),
+            int(self.auto_move),
         )
 
     def __del__(self):
