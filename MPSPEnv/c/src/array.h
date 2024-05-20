@@ -37,4 +37,6 @@ void fill_array(Array array, int value);
 
 int get_max(Array array);
 
+int get_sum(Array array);
+
 #endif

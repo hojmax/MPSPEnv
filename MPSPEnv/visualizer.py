@@ -41,7 +41,7 @@ class Visualizer:
 
         return blocking_containers
 
-    def render(self, Bay, T, sum_reward, action_probs):
+    def render(self, Bay, T, sum_reward, action_probs=None):
         pygame.event.pump()
         self.screen.fill((255, 255, 255))
         self._render_bay(Bay)

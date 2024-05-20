@@ -123,6 +123,16 @@ int get_max(Array array)
     return max;
 }
 
+int get_sum(Array array)
+{
+    int sum = 0;
+    for (int i = 0; i < array.n; i++)
+    {
+        sum += array.values[i];
+    }
+    return sum;
+}
+
 Array array_from_ints(int *values, int n)
 {
     Array array;

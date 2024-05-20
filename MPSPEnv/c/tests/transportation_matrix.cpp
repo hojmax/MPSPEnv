@@ -20,7 +20,6 @@ TEST(transportation_matrix, non_negative_matrix)
     int matrices_checked = 100;
     int N = 10;
     int bay_capacity = 40;
-    set_random_seed();
 
     for (int i = 0; i < matrices_checked; i++)
     {
@@ -52,7 +51,6 @@ TEST(transportation_matrix, feasibility)
     int matrices_checked = 100;
     int N = 10;
     int bay_capacity = 40;
-    set_random_seed();
 
     for (int i = 0; i < matrices_checked; i++)
     {

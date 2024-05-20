@@ -152,3 +152,116 @@ TEST(bay, sort_bay)
 
     free_bay(bay);
 }
+
+TEST(bay, sort_bay2)
+{
+    int R = 6;
+    int C = 6;
+    int N = 6;
+
+    Bay bay = get_bay(R, C, N);
+
+    int bay_values[] = {
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        3,
+        0,
+        0,
+        5,
+        5,
+        0,
+        3,
+        3,
+        3,
+        5,
+        5,
+        0,
+        5,
+        5,
+        5,
+        5,
+        5,
+    };
+
+    // set all the values of bay.matrix to bay_values
+    for (int i = 0; i < R * C; i++)
+    {
+        bay.matrix.values[i] = bay_values[i];
+    }
+
+    int column_counts_values[] = {0, 3, 2, 2, 3, 4, 5};
+    int min_container_per_column_values[] = {
+        6,
+        3,
+        3,
+        3,
+        5,
+        5};
+    for (int i = 0; i < C; i++)
+    {
+        bay.column_counts.values[i] = column_counts_values[i];
+        bay.min_container_per_column.values[i] = min_container_per_column_values[i];
+    }
+
+    bay_add_containers(bay, 0, 5, 1);
+
+    int expected_matrix[] = {
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        3,
+        5,
+        5,
+        0,
+        3,
+        3,
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+    };
+
+    test_array_compare(bay.matrix, expected_matrix);
+
+    free_bay(bay);
+}

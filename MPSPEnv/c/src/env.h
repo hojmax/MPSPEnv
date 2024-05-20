@@ -12,6 +12,8 @@ typedef struct Env
     Array mask;
     int auto_move;
     int *total_reward;
+    int *containers_left;
+    int *containers_placed;
 } Env;
 
 typedef struct StepInfo

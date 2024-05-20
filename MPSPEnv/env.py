@@ -60,8 +60,6 @@ class Env(gym.Env):
         self.visualizer = None
         self.auto_move = auto_move
         self.speedy = speedy
-        self.action_probs = None
-        self.total_reward = 0
 
     def step(self, action: int):
         assert self._env is not None, "The environment must be reset before stepping."
@@ -70,7 +68,6 @@ class Env(gym.Env):
         step_info = c_lib.step(self._env, action)
         reward = step_info.reward
         self.terminal = bool(step_info.is_terminal)
-        self.total_reward += reward
 
         if self.speedy:
             return None
@@ -92,8 +89,6 @@ class Env(gym.Env):
             speedy=self.speedy,
         )
         new_env._env = c_lib.copy_env(self._env)
-        new_env.total_reward = self.total_reward
-        new_env.action_probs = self.action_probs
         new_env.terminal = self.terminal
         new_env._set_stores()
 
@@ -102,7 +97,7 @@ class Env(gym.Env):
     def reset(self, seed: int = None, options=None):
         self._reset_random_c_env(seed)
         self._set_stores()
-        self._reset_constants()
+        self.terminal = False
 
         if self.speedy:
             return None
@@ -113,7 +108,7 @@ class Env(gym.Env):
         self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
         self._set_stores()
-        self._reset_constants()
+        self.terminal = False
 
         if self.speedy:
             return None
@@ -124,9 +119,7 @@ class Env(gym.Env):
         if self.visualizer == None:
             self.visualizer = Visualizer(self.R, self.C, self.N)
 
-        return self.visualizer.render(
-            self.bay, self.T, self.total_reward, self.action_probs
-        )
+        return self.visualizer.render(self.bay, self.T, self.total_reward)
 
     def close(self):
         if self._env is not None:
@@ -140,15 +133,16 @@ class Env(gym.Env):
             raise ActionNotAllowed
 
     @property
-    def containers_left(self) -> int:
-        return self._env.T.contents.containers_left
+    def total_reward(self) -> int:
+        return self._env.total_reward.contents.value
 
     @property
-    def moves_to_solve(self) -> int:
-        return (
-            self._env.T.contents.containers_placed
-            + self._env.T.contents.containers_left
-        )
+    def containers_left(self) -> int:
+        return self._env.containers_left.contents.value
+
+    @property
+    def containers_placed(self) -> int:
+        return self._env.containers_placed.contents.value
 
     @property
     def remaining_ports(self) -> int:
@@ -179,11 +173,6 @@ class Env(gym.Env):
             self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
         )
         self.mask_store = LazyNdarray(self._env, ["mask"], (2 * self.C * self.R,))
-
-    def _reset_constants(self):
-        self.total_reward = 0
-        self.terminal = False
-        self.action_probs = None
 
     def _assert_transportation(self, transportation: np.ndarray):
         assert (
@@ -236,9 +225,7 @@ class Env(gym.Env):
         else:
             c_lib.set_seed(np.random.randint(0, 2**32))
 
-        self._env = c_lib.get_random_env(
-            self.R, self.C, self.N, int(self.auto_move)
-        )
+        self._env = c_lib.get_random_env(self.R, self.C, self.N, int(self.auto_move))
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
         if self._env is not None:
@@ -261,13 +248,14 @@ class Env(gym.Env):
 
     def __hash__(self):
         return hash(
-            # !!!! PLUS MASK !!!!
             self.bay_store.ndarray.tobytes()
             + self.flat_T_store.ndarray.tobytes()
+            + self.mask_store.ndarray.tobytes()
         )
 
     def __eq__(self, other: "Env"):
-        # !!!! PLUS MASK !!!!
-        return np.array_equal(
-            self.bay_store.ndarray, other.bay_store.ndarray
-        ) and np.array_equal(self.flat_T_store.ndarray, other.flat_T_store.ndarray)
+        return (
+            np.array_equal(self.bay_store.ndarray, other.bay_store.ndarray)
+            and np.array_equal(self.flat_T_store.ndarray, other.flat_T_store.ndarray)
+            and np.array_equal(self.mask_store.ndarray, other.mask_store.ndarray)
+        )

@@ -3,8 +3,6 @@
 
 void set_seed(int seed);
 
-void set_random_seed();
-
 int random_uniform_int(int min, int max);
 
 int random_int();

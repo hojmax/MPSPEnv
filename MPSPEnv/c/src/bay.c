@@ -140,7 +140,7 @@ void update_right_most_added_column(Bay bay, int column)
         assert(0);
 }
 
-void sort_lexicographic_order(Bay bay, Array column_order, int first_affected_row)
+void sorted_rows_order(Bay bay, Array column_order, int first_affected_row)
 {
     for (int i = bay.R - 1; i >= first_affected_row; i--)
     {
@@ -153,7 +153,7 @@ void sort_lexicographic_order(Bay bay, Array column_order, int first_affected_ro
 Array get_column_order(Bay bay)
 {
     Array column_order = get_range(0, bay.C);
-    sort_lexicographic_order(bay, column_order, bay.R - get_max(bay.column_counts));
+    sorted_rows_order(bay, column_order, bay.R - get_max(bay.column_counts));
     return column_order;
 }
 

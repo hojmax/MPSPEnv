@@ -156,6 +156,10 @@ Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
     env.mask = get_zeros(2 * env.bay.R * env.bay.C);
     env.total_reward = malloc(sizeof(int));
     *env.total_reward = 0;
+    env.containers_placed = malloc(sizeof(int));
+    *env.containers_placed = 0;
+    env.containers_left = malloc(sizeof(int));
+    *env.containers_left = get_sum(T->matrix);
     initialize_flat_T(&env, N);
     insert_flat_T_matrix(env);
 
@@ -190,6 +194,10 @@ Env copy_env(Env env)
     copy.auto_move = env.auto_move;
     copy.total_reward = malloc(sizeof(int));
     *copy.total_reward = *env.total_reward;
+    copy.containers_placed = malloc(sizeof(int));
+    *copy.containers_placed = *env.containers_placed;
+    copy.containers_left = malloc(sizeof(int));
+    *copy.containers_left = *env.containers_left;
 
     return copy;
 }
@@ -201,19 +209,21 @@ void free_env(Env env)
     free_array(env.flat_T_matrix);
     free_array(env.mask);
     free(env.total_reward);
+    free(env.containers_placed);
+    free(env.containers_left);
 }
 
-int get_add_reward(Env env, int column, int next_container)
+int get_add_reward(Env env, int column, int next_container, int n_containers)
 {
     if (is_container_blocking(env.bay, column, next_container))
-        return -1;
+        return -n_containers;
     else
         return 0;
 }
 
 int get_remove_reward(Env env, Array reshuffled)
 {
-    return -1;
+    return -get_sum(reshuffled);
 }
 
 void handle_sailing(Env env)
@@ -222,6 +232,7 @@ void handle_sailing(Env env)
     {
         transportation_sail_along(env.T);
         Array reshuffled = bay_sail_along(env.bay, &env);
+        *env.containers_left += get_sum(reshuffled);
         transportation_insert_reshuffled(env.T, reshuffled);
         free_array(reshuffled);
     }
@@ -233,8 +244,10 @@ int add_container(Env env, int action)
     int n_containers = action % env.bay.R + 1;
     int n_left_of_type = env.T->matrix.values[env.T->last_non_zero_column];
     int next_container = transportation_pop_n_containers(env.T, n_containers);
-    int reward = get_add_reward(env, column, next_container);
+    int reward = get_add_reward(env, column, next_container, n_containers);
     bay_add_containers(env.bay, column, next_container, n_containers);
+    *env.containers_placed += n_containers;
+    *env.containers_left -= n_containers;
 
     handle_sailing(env);
 
@@ -250,6 +263,7 @@ int remove_container(Env env, int action)
 {
     int column = (action / env.bay.R) % env.bay.C;
     int n_containers = action % env.bay.R + 1;
+    *env.containers_left += n_containers;
     Array reshuffled = bay_pop_containers(env.bay, column, n_containers);
     transportation_insert_reshuffled(env.T, reshuffled);
     int reward = get_remove_reward(env, reshuffled);

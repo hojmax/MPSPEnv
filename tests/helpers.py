@@ -18,6 +18,15 @@ def run_env_against_rollout(
         assert np.all(env.bay == state["bay"]), f"Bay: {env.bay} != {state['bay']}"
         assert np.all(env.T == state["T"]), f"T: {env.T} != {state['T']}"
         assert np.all(env.mask == state["mask"]), f"Mask: {env.mask} != {state['mask']}"
+        assert (
+            env.total_reward == state["total_reward"]
+        ), f"Total Reward: {env.total_reward} != {state['total_reward']}"
+        assert (
+            env.containers_placed == state["containers_placed"]
+        ), f"Containers Placed: {env.containers_placed} != {state['containers_placed']}"
+        assert (
+            env.containers_left == state["containers_left"]
+        ), f"Containers Left: {env.containers_left} != {state['containers_left']}"
 
 
 def get_rollouts():

@@ -20,6 +20,9 @@ def take_snapshot(env, action=None):
         "bay": env.bay.tolist(),
         "T": env.T.tolist(),
         "mask": env.mask.tolist(),
+        "total_reward": env.total_reward,
+        "containers_placed": env.containers_placed,
+        "containers_left": env.containers_left,
     }
 
     if action:
@@ -60,7 +63,9 @@ def print_snapshot(snapshot):
         print(row)
     print("Mask:")
     print(snapshot["mask"])
-
+    print("Total reward:", snapshot["total_reward"])
+    print("Containers placed:", snapshot["containers_placed"])
+    print("Containers left:", snapshot["containers_left"])
     print("Valid actions:")
     for action, is_valid in enumerate(snapshot["mask"]):
         if is_valid == 1:
@@ -94,6 +99,7 @@ def run_interactive_game(env):
             continue
 
         states.append(take_snapshot(env, action_str))
+        print()
         print_snapshot(states[-1])
 
     return states
@@ -110,7 +116,7 @@ def set_path():
 
 
 def get_filename(settings, seed):
-    return f"rollout_R{settings['R']}C{settings['C']}N{settings['N']}seed{seed}.json"
+    return f"R{settings['R']}_C{settings['C']}_N{settings['N']}_seed{seed}.json"
 
 
 def get_args():
@@ -120,8 +126,12 @@ def get_args():
     parser.add_argument("--R", type=int, default=8, help="Number of rows")
     parser.add_argument("--C", type=int, default=8, help="Number of columns")
     parser.add_argument("--N", type=int, default=8, help="Number of containers")
+    parser.add_argument("--auto_move", action="store_true", help="Enable auto_move")
     parser.add_argument(
-        "--auto_move", type=bool, default=False, help="Enable auto_move (True/False)"
+        "--no-auto_move",
+        action="store_false",
+        dest="auto_move",
+        help="Disable auto_move",
     )
     parser.add_argument(
         "--speedy", type=bool, default=True, help="Enable speedy mode (True/False)"

@@ -33,8 +33,6 @@ class Transportation_Info(Structure):
         ("seed", c_int),
         ("last_non_zero_column", c_int),
         ("current_port", c_int),
-        ("containers_left", c_int),
-        ("containers_placed", c_int),
     ]
 
 
@@ -46,6 +44,8 @@ class Env(Structure):
         ("mask", Array),
         ("auto_move", c_int),
         ("total_reward", POINTER(c_int)),
+        ("containers_left", POINTER(c_int)),
+        ("containers_placed", POINTER(c_int)),
     ]
 
 
@@ -75,9 +75,6 @@ c_lib.get_specific_env.argtypes = [c_int, c_int, c_int, POINTER(c_int), c_int]
 c_lib.get_specific_env.restype = Env
 
 c_lib.free_env.argtypes = [Env]
-
-c_lib.set_random_seed.argtypes = []
-c_lib.set_seed.argtypes = [c_int]
 
 c_lib.copy_env.argtypes = [Env, c_int]
 c_lib.copy_env.restype = Env

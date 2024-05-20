@@ -9,11 +9,6 @@ void set_seed(int seed)
     srand(seed);
 }
 
-void set_random_seed()
-{
-    srand(time(NULL));
-}
-
 int random_int()
 {
     return rand();
