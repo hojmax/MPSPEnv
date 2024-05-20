@@ -22,7 +22,8 @@ int compare_indexes_using_values(void *values, const void *a, const void *b)
     else if (value_a > value_b)
         return 1;
     else
-        return 0;
+        return (index_a < index_b) ? -1 : (index_a > index_b) ? 1
+                                                              : 0;
 }
 
 void sort_indexes_using_values(Array indexes, Array values)
