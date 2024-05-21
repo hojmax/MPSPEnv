@@ -67,3 +67,26 @@ def test_quicktest():
         sanity_check_env(env, **additional_info)
         assert initial_containers - env.total_reward == env.containers_placed
         env.close()
+
+
+def test_copy_env():
+    settings = get_random_settings()
+    seed = np.random.randint(0, 1000000)
+    env = recreate_env(settings, seed)
+    env.step(get_random_action(env.mask))
+    copy = env.copy()
+
+    assert np.all(env.bay == copy.bay)
+    assert np.all(env.T == copy.T)
+    assert np.all(env.mask == copy.mask)
+    assert np.all(env.flat_T == copy.flat_T)
+    assert env.auto_move == copy.auto_move
+    assert env.speedy == copy.speedy
+    assert env.total_reward == copy.total_reward
+    assert env.containers_left == copy.containers_left
+    assert env.containers_placed == copy.containers_placed
+    assert env.remaining_ports == copy.remaining_ports
+    assert env == copy
+
+    env.close()
+    copy.close()

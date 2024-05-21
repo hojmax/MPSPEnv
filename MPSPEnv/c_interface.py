@@ -76,5 +76,5 @@ c_lib.get_specific_env.restype = Env
 
 c_lib.free_env.argtypes = [Env]
 
-c_lib.copy_env.argtypes = [Env, c_int]
+c_lib.copy_env.argtypes = [Env]
 c_lib.copy_env.restype = Env

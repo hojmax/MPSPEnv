@@ -1,7 +1,7 @@
 from MPSPEnv.c_interface import c_lib, Env as c_Env
-import numpy as np
-import gymnasium as gym
 from MPSPEnv.visualizer import Visualizer
+import gymnasium as gym
+import numpy as np
 import warnings
 import ctypes
 
