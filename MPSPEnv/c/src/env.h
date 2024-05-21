@@ -8,7 +8,6 @@ typedef struct Env
 {
     Transportation_Info *T;
     Bay bay;
-    Array flat_T_matrix;
     Array mask;
     int auto_move;
     int *total_reward;

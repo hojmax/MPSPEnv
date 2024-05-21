@@ -79,7 +79,6 @@ def test_copy_env():
     assert np.all(env.bay == copy.bay)
     assert np.all(env.T == copy.T)
     assert np.all(env.mask == copy.mask)
-    assert np.all(env.flat_T == copy.flat_T)
     assert env.auto_move == copy.auto_move
     assert env.speedy == copy.speedy
     assert env.total_reward == copy.total_reward

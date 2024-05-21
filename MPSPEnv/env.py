@@ -157,10 +157,6 @@ class Env(gym.Env):
         return self.T_store.ndarray.copy()
 
     @property
-    def flat_T(self) -> np.ndarray:
-        return self.flat_T_store.ndarray.copy()
-
-    @property
     def mask(self) -> np.ndarray:
         return self.mask_store.ndarray.copy()
 
@@ -168,9 +164,6 @@ class Env(gym.Env):
         self.bay_store = LazyNdarray(self._env, ["bay", "matrix"], (self.R, self.C))
         self.T_store = LazyNdarray(
             self._env, ["T", "contents", "matrix"], (self.N, self.N)
-        )
-        self.flat_T_store = LazyNdarray(
-            self._env, ["flat_T_matrix"], ((self.N - 1) * self.N // 2,)
         )
         self.mask_store = LazyNdarray(self._env, ["mask"], (2 * self.C * self.R,))
 
@@ -209,12 +202,7 @@ class Env(gym.Env):
         return True
 
     def _get_observation(self):
-        return {
-            "bay": self.bay / self.remaining_ports,
-            "flat_T": self.flat_T / (self.R * self.C),
-            "mask": self.mask,
-            "containers_left": self.containers_left,
-        }
+        return {"bay": self.bay, "T": self.T, "mask": self.mask}
 
     def _reset_random_c_env(self, seed: int = None):
         if self._env is not None:
@@ -249,13 +237,13 @@ class Env(gym.Env):
     def __hash__(self):
         return hash(
             self.bay_store.ndarray.tobytes()
-            + self.flat_T_store.ndarray.tobytes()
+            + self.T_store.ndarray.tobytes()
             + self.mask_store.ndarray.tobytes()
         )
 
     def __eq__(self, other: "Env"):
         return (
             np.array_equal(self.bay_store.ndarray, other.bay_store.ndarray)
-            and np.array_equal(self.flat_T_store.ndarray, other.flat_T_store.ndarray)
+            and np.array_equal(self.T_store.ndarray, other.T_store.ndarray)
             and np.array_equal(self.mask_store.ndarray, other.mask_store.ndarray)
         )

@@ -106,4 +106,3 @@ def sanity_check_env(env, containers_per_port, min_container_per_column, column_
         min_container_per_column == min_check
     ), f"{min_container_per_column} != {min_check}, {env.bay}"
     assert np.all(np.sum(env.bay > 0, axis=0) == column_counts)
-    assert np.all(env.T[np.triu_indices(env.N, k=1)] == env.flat_T)

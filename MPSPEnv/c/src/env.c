@@ -5,23 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void insert_flat_T_matrix(Env env)
-{
-    int index = 0;
-
-    // Upper Triangular Indeces:
-    // i in [0, N)
-    // j in [i + 1, N]
-    for (int i = 0; i < env.T->N - 1; i++)
-    {
-        for (int j = i + 1; j < env.T->N; j++)
-        {
-            env.flat_T_matrix.values[index] = env.T->matrix.values[i * env.T->N + j];
-            index++;
-        }
-    }
-}
-
 int columns_identical(Bay bay, int c1, int c2)
 {
     for (int r = bay.R - 1; r >= 0; r--)
@@ -140,12 +123,6 @@ int insert_mask(Env env)
         return -1;
 }
 
-void initialize_flat_T(Env *env, int N)
-{
-    int upper_triangle_size = (N * (N - 1)) / 2;
-    env->flat_T_matrix = get_zeros(upper_triangle_size);
-}
-
 Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
 {
     assert(R > 0 && C > 0 && N > 0);
@@ -162,8 +139,6 @@ Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
     *env.containers_placed = 0;
     env.containers_left = malloc(sizeof(int));
     *env.containers_left = get_sum(T->matrix);
-    initialize_flat_T(&env, N);
-    insert_flat_T_matrix(env);
 
     int only_legal_action = insert_mask(env);
     if (auto_move && only_legal_action != -1)
@@ -191,7 +166,6 @@ Env copy_env(Env env)
     Env copy;
     copy.T = copy_transportation_info(env.T);
     copy.bay = copy_bay(env.bay);
-    copy.flat_T_matrix = copy_array(env.flat_T_matrix);
     copy.mask = copy_array(env.mask);
     copy.auto_move = env.auto_move;
     copy.total_reward = malloc(sizeof(int));
@@ -208,7 +182,6 @@ void free_env(Env env)
 {
     free_bay(env.bay);
     free_transportation_matrix(env.T);
-    free_array(env.flat_T_matrix);
     free_array(env.mask);
     free(env.total_reward);
     free(env.containers_placed);
@@ -318,7 +291,6 @@ StepInfo step(Env env, int action)
     step_info.is_terminal = decide_is_terminated(env);
     *env.total_reward += step_info.reward;
 
-    insert_flat_T_matrix(env);
     int only_legal_action = insert_mask(env);
     if (env.auto_move && !step_info.is_terminal && only_legal_action != -1)
         return step(env, only_legal_action);

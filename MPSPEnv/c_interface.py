@@ -40,7 +40,6 @@ class Env(Structure):
     _fields_ = [
         ("T", POINTER(Transportation_Info)),
         ("bay", Bay),
-        ("flat_T_matrix", Array),
         ("mask", Array),
         ("auto_move", c_int),
         ("total_reward", POINTER(c_int)),
