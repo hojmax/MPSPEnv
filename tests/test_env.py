@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import subprocess
-from helpers import run_env_against_rollout, get_rollouts, recreate_env
+from helpers import *
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -46,4 +46,24 @@ def test_rollouts():
     for rollout in rollouts:
         env = recreate_env(rollout["settings"], rollout["seed"])
         run_env_against_rollout(env, rollout["states"])
+        env.close()
+
+
+def test_quicktest():
+    episodes = 1000
+
+    for _ in range(episodes):
+        settings = get_random_settings()
+        seed = np.random.randint(0, 1000000)
+        initial_containers = get_initial_containers(settings, seed)
+        env = recreate_env(settings, seed)
+        additional_info = get_additional_env_info(env)
+
+        while not env.terminal:
+            sanity_check_env(env, **additional_info)
+            action = get_random_action(env.mask)
+            env.step(action)
+
+        sanity_check_env(env, **additional_info)
+        assert initial_containers - env.total_reward == env.containers_placed
         env.close()
