@@ -13,11 +13,12 @@ typedef struct Env
     int *total_reward;
     int *containers_left;
     int *containers_placed;
+    int *terminated;
 } Env;
 
 typedef struct StepInfo
 {
-    int is_terminal;
+    int terminated;
     int reward;
 } StepInfo;
 

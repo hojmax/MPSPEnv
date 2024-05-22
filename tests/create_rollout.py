@@ -84,7 +84,7 @@ def run_interactive_game(env):
     print("Initial state:")
     print_snapshot(take_snapshot(env))
 
-    while not env.terminal:
+    while not env.terminated:
         action_str = input("Take action:")
         try:
             action = string_to_action(action_str, env.R, env.C)
@@ -126,9 +126,9 @@ def get_args():
     parser.add_argument("--R", type=int, default=8, help="Number of rows")
     parser.add_argument("--C", type=int, default=8, help="Number of columns")
     parser.add_argument("--N", type=int, default=8, help="Number of containers")
-    parser.add_argument("--auto_move", action="store_true", help="Enable auto_move")
+    parser.add_argument("--auto-move", action="store_true", help="Enable auto_move")
     parser.add_argument(
-        "--no-auto_move",
+        "--no-auto-move",
         action="store_false",
         dest="auto_move",
         help="Disable auto_move",

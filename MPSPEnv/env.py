@@ -67,7 +67,6 @@ class Env(gym.Env):
 
         step_info = c_lib.step(self._env, action)
         reward = step_info.reward
-        self.terminal = bool(step_info.is_terminal)
 
         if self.speedy:
             return None
@@ -75,7 +74,7 @@ class Env(gym.Env):
             return (
                 self._get_observation(),
                 reward,
-                self.terminal,
+                self.terminated,
                 False,
                 {},
             )
@@ -89,7 +88,6 @@ class Env(gym.Env):
             speedy=self.speedy,
         )
         new_env._env = c_lib.copy_env(self._env)
-        new_env.terminal = self.terminal
         new_env._set_stores()
 
         return new_env
@@ -97,7 +95,6 @@ class Env(gym.Env):
     def reset(self, seed: int = None, options=None):
         self._reset_random_c_env(seed)
         self._set_stores()
-        self.terminal = False
 
         if self.speedy:
             return None
@@ -108,7 +105,6 @@ class Env(gym.Env):
         self._assert_transportation(transportation)
         self._reset_specific_c_env(transportation)
         self._set_stores()
-        self.terminal = False
 
         if self.speedy:
             return None
@@ -143,6 +139,10 @@ class Env(gym.Env):
     @property
     def containers_placed(self) -> int:
         return self._env.containers_placed.contents.value
+
+    @property
+    def terminated(self) -> bool:
+        return self._env.terminated.contents.value
 
     @property
     def remaining_ports(self) -> int:

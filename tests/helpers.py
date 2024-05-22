@@ -91,7 +91,7 @@ def get_random_action(mask):
 
 
 def sanity_check_env(env, containers_per_port, min_container_per_column, column_counts):
-    if env.terminal:
+    if env.terminated:
         assert np.all(env.mask == 0), "Mask should be all zeros"
         assert np.all(env.bay == 0), "Bay should be all zeros"
         assert np.all(env.T == 0), "T should be all zeros"

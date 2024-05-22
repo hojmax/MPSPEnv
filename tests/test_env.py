@@ -59,7 +59,7 @@ def test_quicktest():
         env = recreate_env(settings, seed)
         additional_info = get_additional_env_info(env)
 
-        while not env.terminal:
+        while not env.terminated:
             sanity_check_env(env, **additional_info)
             action = get_random_action(env.mask)
             env.step(action)

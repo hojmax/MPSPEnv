@@ -45,12 +45,13 @@ class Env(Structure):
         ("total_reward", POINTER(c_int)),
         ("containers_left", POINTER(c_int)),
         ("containers_placed", POINTER(c_int)),
+        ("terminated", POINTER(c_int)),
     ]
 
 
 class StepInfo(Structure):
     _fields_ = [
-        ("is_terminal", c_int),
+        ("terminated", c_int),
         ("reward", c_int),
     ]
 

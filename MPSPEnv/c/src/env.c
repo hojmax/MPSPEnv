@@ -139,6 +139,8 @@ Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
     *env.containers_placed = 0;
     env.containers_left = malloc(sizeof(int));
     *env.containers_left = get_sum(T->matrix);
+    env.terminated = malloc(sizeof(int));
+    *env.terminated = 0;
 
     int only_legal_action = insert_mask(env);
     if (auto_move && only_legal_action != -1)
@@ -174,6 +176,8 @@ Env copy_env(Env env)
     *copy.containers_placed = *env.containers_placed;
     copy.containers_left = malloc(sizeof(int));
     *copy.containers_left = *env.containers_left;
+    copy.terminated = malloc(sizeof(int));
+    *copy.terminated = *env.terminated;
 
     return copy;
 }
@@ -186,6 +190,7 @@ void free_env(Env env)
     free(env.total_reward);
     free(env.containers_placed);
     free(env.containers_left);
+    free(env.terminated);
 }
 
 int get_add_reward(Env env, int column, int next_container, int n_containers)
@@ -288,11 +293,12 @@ StepInfo step(Env env, int action)
     assert(env.mask.values[action] == 1);
     StepInfo step_info;
     step_info.reward = step_action(env, action);
-    step_info.is_terminal = decide_is_terminated(env);
+    step_info.terminated = decide_is_terminated(env);
+    *env.terminated = step_info.terminated;
     *env.total_reward += step_info.reward;
 
     int only_legal_action = insert_mask(env);
-    if (env.auto_move && !step_info.is_terminal && only_legal_action != -1)
+    if (env.auto_move && !step_info.terminated && only_legal_action != -1)
         return step(env, only_legal_action);
 
     return step_info;
