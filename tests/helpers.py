@@ -1,6 +1,6 @@
 import glob
 import json
-from tests.create_rollout import string_to_action
+from create_rollout import string_to_action
 import numpy as np
 
 
