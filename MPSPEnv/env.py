@@ -65,7 +65,7 @@ class Env(gym.Env):
         assert self._env is not None, "The environment must be reset before stepping."
         self._check_action(action)
 
-        step_info = c_lib.step(self._env, action)
+        step_info = c_lib.env_step(self._env, action)
 
         if self.speedy:
             return None

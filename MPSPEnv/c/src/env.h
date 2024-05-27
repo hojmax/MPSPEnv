@@ -22,7 +22,7 @@ typedef struct StepInfo
     int reward;
 } StepInfo;
 
-StepInfo step(Env env, int action);
+StepInfo env_step(Env env, int action);
 
 Env copy_env(Env env);
 

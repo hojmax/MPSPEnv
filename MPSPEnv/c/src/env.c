@@ -122,46 +122,6 @@ int insert_mask(Env env)
         return -1;
 }
 
-Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
-{
-    assert(R > 0 && C > 0 && N > 0);
-    assert(auto_move == 0 || auto_move == 1);
-    Env env;
-
-    env.auto_move = auto_move;
-    env.bay = get_bay(R, C, N);
-    env.T = T;
-    env.mask = get_zeros(2 * env.bay.R * env.bay.C);
-    env.total_reward = malloc(sizeof(int));
-    *env.total_reward = 0;
-    env.containers_placed = malloc(sizeof(int));
-    *env.containers_placed = 0;
-    env.containers_left = malloc(sizeof(int));
-    *env.containers_left = get_sum(T->matrix);
-    env.terminated = malloc(sizeof(int));
-    *env.terminated = 0;
-
-    int only_legal_action = insert_mask(env);
-    if (auto_move && only_legal_action != -1)
-    {
-        step(env, only_legal_action);
-    }
-
-    return env;
-}
-
-Env get_random_env(int R, int C, int N, int auto_move)
-{
-    Transportation_Info *T = get_random_transportation_matrix(N, R * C);
-    return build_env(R, C, N, auto_move, T);
-}
-
-Env get_specific_env(int R, int C, int N, int *T_matrix, int auto_move)
-{
-    Transportation_Info *T = get_specific_transportation_matrix(N, T_matrix);
-    return build_env(R, C, N, auto_move, T);
-}
-
 Env copy_env(Env env)
 {
     Env copy;
@@ -286,7 +246,7 @@ int step_action(Env env, int action)
         return remove_container(env, action);
 }
 
-StepInfo step(Env env, int action)
+StepInfo env_step(Env env, int action)
 {
     assert(action >= 0 && action < 2 * env.bay.C * env.bay.R);
     assert(env.mask.values[action] == 1);
@@ -299,10 +259,50 @@ StepInfo step(Env env, int action)
     int only_legal_action = insert_mask(env);
     if (env.auto_move && !step_info.terminated && only_legal_action != -1)
     {
-        StepInfo next_step_info = step(env, only_legal_action);
+        StepInfo next_step_info = env_step(env, only_legal_action);
         step_info.reward += next_step_info.reward;
         step_info.terminated = next_step_info.terminated;
     }
 
     return step_info;
+}
+
+Env build_env(int R, int C, int N, int auto_move, Transportation_Info *T)
+{
+    assert(R > 0 && C > 0 && N > 0);
+    assert(auto_move == 0 || auto_move == 1);
+    Env env;
+
+    env.auto_move = auto_move;
+    env.bay = get_bay(R, C, N);
+    env.T = T;
+    env.mask = get_zeros(2 * env.bay.R * env.bay.C);
+    env.total_reward = malloc(sizeof(int));
+    *env.total_reward = 0;
+    env.containers_placed = malloc(sizeof(int));
+    *env.containers_placed = 0;
+    env.containers_left = malloc(sizeof(int));
+    *env.containers_left = get_sum(T->matrix);
+    env.terminated = malloc(sizeof(int));
+    *env.terminated = 0;
+
+    int only_legal_action = insert_mask(env);
+    if (auto_move && only_legal_action != -1)
+    {
+        env_step(env, only_legal_action);
+    }
+
+    return env;
+}
+
+Env get_random_env(int R, int C, int N, int auto_move)
+{
+    Transportation_Info *T = get_random_transportation_matrix(N, R * C);
+    return build_env(R, C, N, auto_move, T);
+}
+
+Env get_specific_env(int R, int C, int N, int *T_matrix, int auto_move)
+{
+    Transportation_Info *T = get_specific_transportation_matrix(N, T_matrix);
+    return build_env(R, C, N, auto_move, T);
 }

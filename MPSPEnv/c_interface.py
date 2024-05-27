@@ -65,8 +65,8 @@ if len(c_lib_files) == 0:
 c_lib_path = c_lib_files[0]
 c_lib = ctypes.CDLL(c_lib_path)
 
-c_lib.step.argtypes = [Env, c_int]
-c_lib.step.restype = StepInfo
+c_lib.env_step.argtypes = [Env, c_int]
+c_lib.env_step.restype = StepInfo
 
 c_lib.get_random_env.argtypes = [c_int, c_int, c_int, c_int]
 c_lib.get_random_env.restype = Env
