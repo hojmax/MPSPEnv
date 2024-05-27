@@ -75,6 +75,10 @@ c_lib.get_specific_env.argtypes = [c_int, c_int, c_int, POINTER(c_int), c_int]
 c_lib.get_specific_env.restype = Env
 
 c_lib.free_env.argtypes = [Env]
+c_lib.free_env.restype = None
 
 c_lib.copy_env.argtypes = [Env]
 c_lib.copy_env.restype = Env
+
+c_lib.set_seed.argtypes = [c_int]
+c_lib.set_seed.restype = None
