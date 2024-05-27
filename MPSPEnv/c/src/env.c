@@ -298,7 +298,11 @@ StepInfo step(Env env, int action)
 
     int only_legal_action = insert_mask(env);
     if (env.auto_move && !step_info.terminated && only_legal_action != -1)
-        return step(env, only_legal_action);
+    {
+        StepInfo next_step_info = step(env, only_legal_action);
+        step_info.reward += next_step_info.reward;
+        step_info.terminated = next_step_info.terminated;
+    }
 
     return step_info;
 }
