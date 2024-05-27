@@ -45,15 +45,14 @@ int compute_mask_entry(Env env, int i, int empty_spots_to_left, Array identical_
 {
     // RULE 1: The current number of containers plus the number of containers to add must be less than or equal to R
     // RULE 2: The current number of containers minus the number of containers to remove must be greater than or equal to 0
-    // RULE 3: If there is only one available action, the env does it automatically
-    // RULE 4: You may only add one type of container at a time (i.e. you cant add 2x2s and 2x5s in a column at the same time)
-    // The rules below assumes that columns are sorted in priority of 1. Increasing Column height 2. Increasing lexigraphical order
-    // RULE 5: You may only remove if you have not yet added containers (resets after sailing)
-    // RULE 6: You may only add to a column that is to the left of the last column you added to (resets after each container type)
-    // RULE 7: You may only remove from a column that is to the right of the last column you removed from (resets after sailing)
-    // RULE 8: You may not take an action that leaves no options for the next action
-    // RULE 9: If two columns are identical, you may only add to the rightmost column
-    // RULE 10: If two columns are identical, you may only remove from the leftmost column
+    // RULE 3: You may only add one type of container at a time (i.e. you cant add 2x2s and 2x5s in a column at the same time)
+    // The rules below assumes that columns are sorted occarding the values in the rows from bottom to top:
+    // RULE 4: You may only remove if you have not yet added containers (resets after sailing)
+    // RULE 5: You may only add to a column that is to the left of the last column you added to (resets after each container type)
+    // RULE 6: You may only remove from a column that is to the right of the last column you removed from (resets after sailing)
+    // RULE 7: You may not take an action that leaves no options for the next action
+    // RULE 8: If two columns are identical, you may only add to the rightmost column
+    // RULE 9: If two columns are identical, you may only remove from the leftmost column
 
     // Action space is column major order:
     // [c0r1, c0r2, c0r3, …, c0rR, c1r1, c1r2, …, c2*C-1rR]

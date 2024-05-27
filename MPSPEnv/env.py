@@ -66,15 +66,14 @@ class Env(gym.Env):
         self._check_action(action)
 
         step_info = c_lib.step(self._env, action)
-        reward = step_info.reward
 
         if self.speedy:
             return None
         else:
             return (
                 self._get_observation(),
-                reward,
-                self.terminated,
+                step_info.reward,
+                step_info.terminated,
                 False,
                 {},
             )
@@ -205,8 +204,7 @@ class Env(gym.Env):
         return {"bay": self.bay, "T": self.T, "mask": self.mask}
 
     def _reset_random_c_env(self, seed: int = None):
-        if self._env is not None:
-            c_lib.free_env(self._env)
+        self.close()
 
         if seed is not None:
             c_lib.set_seed(seed)
@@ -216,8 +214,7 @@ class Env(gym.Env):
         self._env = c_lib.get_random_env(self.R, self.C, self.N, int(self.auto_move))
 
     def _reset_specific_c_env(self, transportation: np.ndarray):
-        if self._env is not None:
-            c_lib.free_env(self._env)
+        self.close()
 
         self._env = c_lib.get_specific_env(
             self.R,
@@ -243,7 +240,7 @@ class Env(gym.Env):
 
     def __eq__(self, other: "Env"):
         return (
-            np.array_equal(self.bay_store.ndarray, other.bay_store.ndarray)
+            np.array_equal(self.mask_store.ndarray, other.mask_store.ndarray)
+            and np.array_equal(self.bay_store.ndarray, other.bay_store.ndarray)
             and np.array_equal(self.T_store.ndarray, other.T_store.ndarray)
-            and np.array_equal(self.mask_store.ndarray, other.mask_store.ndarray)
         )

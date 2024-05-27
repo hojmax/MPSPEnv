@@ -90,6 +90,14 @@ def get_random_action(mask):
     return np.random.choice(np.where(mask == 1)[0])
 
 
+def get_remaining_ports(T):
+    num_cols = T.shape[1]
+    for col in range(num_cols - 1, -1, -1):
+        if np.any(T[:, col] != 0):
+            return col
+    return 0
+
+
 def sanity_check_env(env, containers_per_port, min_container_per_column, column_counts):
     if env.terminated:
         assert np.all(env.mask == 0), "Mask should be all zeros"
@@ -106,3 +114,4 @@ def sanity_check_env(env, containers_per_port, min_container_per_column, column_
         min_container_per_column == min_check
     ), f"{min_container_per_column} != {min_check}, {env.bay}"
     assert np.all(np.sum(env.bay > 0, axis=0) == column_counts)
+    assert env.remaining_ports == get_remaining_ports(env.T)
