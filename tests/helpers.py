@@ -134,3 +134,4 @@ def sanity_check_env(env, containers_per_port, min_container_per_column, column_
     assert env.remaining_ports == get_remaining_ports(env.T)
     assert np.all(get_sorted_matrix(env.bay) == env.bay)
     assert not floating_containers(env.bay)
+    assert np.all(env.bay <= env.remaining_ports)
