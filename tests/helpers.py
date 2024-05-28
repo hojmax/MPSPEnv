@@ -98,6 +98,23 @@ def get_remaining_ports(T):
     return 0
 
 
+def get_sorted_matrix(bay):
+    array = bay.copy()
+
+    for i in range(len(array) - 1, -1, -1):
+        array = array[:, np.argsort(array[i])]
+
+    return array
+
+
+def floating_containers(bay):
+    for col in range(bay.shape[1]):
+        for row in range(bay.shape[0] - 1, -1, -1):
+            if bay[row, col] == 0 and np.any(bay[:row, col] != 0):
+                return True
+    return False
+
+
 def sanity_check_env(env, containers_per_port, min_container_per_column, column_counts):
     if env.terminated:
         assert np.all(env.mask == 0), "Mask should be all zeros"
@@ -115,3 +132,5 @@ def sanity_check_env(env, containers_per_port, min_container_per_column, column_
     ), f"{min_container_per_column} != {min_check}, {env.bay}"
     assert np.all(np.sum(env.bay > 0, axis=0) == column_counts)
     assert env.remaining_ports == get_remaining_ports(env.T)
+    assert np.all(get_sorted_matrix(env.bay) == env.bay)
+    assert not floating_containers(env.bay)
