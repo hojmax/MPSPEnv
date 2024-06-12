@@ -5,88 +5,112 @@
 #include <stdlib.h>
 #include <string.h>
 
-int columns_identical(Bay bay, int c1, int c2)
+typedef struct IdenticalInfo
 {
-    for (int r = bay.R - 1; r >= 0; r--)
-    {
-        int value1 = bay.matrix.values[r * bay.C + c1];
-        int value2 = bay.matrix.values[r * bay.C + c2];
+    Array matrix_identical;
+    Array left_right_identical;
+} IdenticalInfo;
 
-        if (value1 != value2)
-            return 0;
-
-        if (value1 == 0)
-            break;
-    }
-    return 1;
-}
-
-// First half of output answer whether there exists a column to the left that is identical
-// The second half of output answer whether there exists a column to the right that is identical
-Array are_columns_identical(Bay bay)
+IdenticalInfo get_identical_info(Bay bay)
 {
-    Array output = get_zeros(2 * bay.C);
+    IdenticalInfo info;
+    info.matrix_identical = get_zeros(bay.C * bay.C); // Whether two columns are identical (symmetric)
+    info.left_right_identical = get_zeros(bay.C * 2); // Whether there exists a column to the left (first C entries) or right (last C entries) that is identical
     for (int c1 = 0; c1 < bay.C; c1++)
     {
+        info.matrix_identical.values[c1 * bay.C + c1] = 1;
         for (int c2 = c1 + 1; c2 < bay.C; c2++)
         {
             int identical = columns_identical(bay, c1, c2);
             if (identical)
             {
-                output.values[c1 + bay.C] = 1;
-                output.values[c2] = 1;
+                info.matrix_identical.values[c1 * bay.C + c2] = 1;
+                info.matrix_identical.values[c2 * bay.C + c1] = 1;
+                info.left_right_identical.values[c1 + bay.C] = 1;
+                info.left_right_identical.values[c2] = 1;
             }
         }
     }
-    return output;
+    return info;
 }
 
-int compute_mask_entry(Env env, int i, int empty_spots_to_left, Array identical_columns)
+int max_to_place_after_action(Env env, int column, int n_to_place, Array matrix_identical)
+{
+    int total = 0;
+    for (int i = 0; i < column; i++)
+    {
+        int are_identical = matrix_identical.values[i * env.bay.C + column];
+        if (are_identical)
+            total += n_to_place;
+        else
+            total += env.bay.R - containers_in_column(env.bay, i);
+    }
+    return total;
+};
+
+// Cases mask does not currently cover for remove:
+// Move sequence 1:
+// [0, 1] -r1c0-> [0, 1] -r1c1-> [0, 0]
+// [1, 1]         [0, 1]         [0, 1]
+// Move sequence 2:
+// [0, 1] -r2c1-> [0, 0]
+// [1, 1]         [0, 1]
+// An analagous case exists for adding containers:
+// Move sequence 1:
+// [0, 0] -a2c0-> [0, 1]
+// [0, 1]         [1, 1]
+// Move sequence 2:
+// [0, 0] -a1c0-> [0, 0] -a1c1-> [0, 1]
+// [0, 1]         [1, 1]         [1, 1]
+// In both cases, the sequence transposes to the same state, leading to redudancy in the search space.
+int compute_mask_entry(Env env, int i, Array left_right_identical, Array matrix_identical)
 {
     // RULE 1: The current number of containers plus the number of containers to add must be less than or equal to R
     // RULE 2: The current number of containers minus the number of containers to remove must be greater than or equal to 0
     // RULE 3: You may only add one type of container at a time (i.e. you cant add 2x2s and 2x5s in a column at the same time)
-    // The rules below assumes that columns are sorted occarding the values in the rows from bottom to top:
+    // The rules below assumes that columns are sorted according to the values in the rows from bottom to top:
     // RULE 4: You may only remove if you have not yet added containers (resets after sailing)
     // RULE 5: You may only add to a column that is to the left of the last column you added to (resets after each container type)
     // RULE 6: You may only remove from a column that is to the right of the last column you removed from (resets after sailing)
-    // RULE 7: You may not take an action that leaves no options for the next action
-    // RULE 8: If two columns are identical, you may only add to the rightmost column
-    // RULE 9: If two columns are identical, you may only remove from the leftmost column
-
-    // Action space is column major order:
-    // [c0r1, c0r2, c0r3, …, c0rR, c1r1, c1r2, …, c2*C-1rR]
+    // RULE 7: If two columns are identical, you may only add to the rightmost column
+    // RULE 8: If two columns are identical, you may only remove from the leftmost column
+    // RULE 9: You may not place more containers into a column than you have done into a previous identical column (resets after each container type)
+    // RULE 10: You may not take an action that leaves no options for the next action (relevant for rule 5 and 9)
     int is_add = i < env.bay.C * env.bay.R;
     int column = (i / env.bay.R) % env.bay.C;
-    int n_to_place = i % env.bay.R + 1;
+    int n_containers = i % env.bay.R + 1;
     int n_of_type = env.T->matrix.values[env.T->last_non_zero_column];
     if (is_add)
     {
         int non_zero = env.T->last_non_zero_column != -1;
-        int no_column_overflow = n_to_place + containers_in_column(env.bay, column) <= env.bay.R;
-        int not_more_than_type = n_of_type >= n_to_place;
+        int no_column_overflow = n_containers + containers_in_column(env.bay, column) <= env.bay.R;
+        int not_more_than_type = n_of_type >= n_containers;
         int add_to_the_left = column < *(env.bay.right_most_added_column);
-        int not_traped = empty_spots_to_left + n_to_place >= n_of_type;
-        int no_right_identical = !identical_columns.values[env.bay.C + column];
+        int not_traped = max_to_place_after_action(env, column, n_containers, matrix_identical) + n_containers >= n_of_type;
+        int no_right_identical = !left_right_identical.values[env.bay.C + column];
+        int not_more_than_previous_identical = n_containers <= env.bay.max_to_place_for_identical.values[env.bay.left_most_identical_index.values[column]];
 
         return (non_zero &&
                 no_column_overflow &&
                 not_more_than_type &&
                 add_to_the_left &&
                 not_traped &&
-                no_right_identical);
+                no_right_identical &&
+                not_more_than_previous_identical);
     }
     else
     {
         int have_not_added_yet = !*(env.bay.added_since_sailing);
-        int not_too_few = (containers_in_column(env.bay, column) - n_to_place >= 0);
+        int not_too_few = (containers_in_column(env.bay, column) - n_containers >= 0);
         int remove_to_the_right = column > *(env.bay.left_most_removed_column);
-        int no_left_identical = !identical_columns.values[column];
+        int no_left_identical = !left_right_identical.values[column];
+        int not_more_than_previous_identical = n_containers <= env.bay.max_to_remove_for_identical.values[env.bay.right_most_identical_index.values[column]];
 
         return (have_not_added_yet &&
                 not_too_few &&
                 remove_to_the_right &&
-                no_left_identical);
+                no_left_identical &&
+                not_more_than_previous_identical);
     }
 }
 
@@ -95,8 +119,7 @@ int insert_mask(Env env)
 {
     int last_legal_action = -1;
     int n_legal_actions = 0;
-    int empty_spots_to_left = 0;
-    Array identical_columns = are_columns_identical(env.bay);
+    IdenticalInfo identical_info = get_identical_info(env.bay);
 
     for (int is_remove = 0; is_remove <= 1; is_remove++)
     {
@@ -105,7 +128,7 @@ int insert_mask(Env env)
             for (int n_containers = 1; n_containers <= env.bay.R; n_containers++)
             {
                 int index = is_remove * env.bay.C * env.bay.R + column * env.bay.R + n_containers - 1;
-                env.mask.values[index] = compute_mask_entry(env, index, empty_spots_to_left, identical_columns);
+                env.mask.values[index] = compute_mask_entry(env, index, identical_info.left_right_identical, identical_info.matrix_identical);
 
                 if (env.mask.values[index])
                 {
@@ -113,9 +136,11 @@ int insert_mask(Env env)
                     last_legal_action = index;
                 }
             }
-            empty_spots_to_left += env.bay.R - containers_in_column(env.bay, column);
         }
     }
+    free_array(identical_info.matrix_identical);
+    free_array(identical_info.left_right_identical);
+
     if (n_legal_actions == 1)
         return last_legal_action;
     else
@@ -184,8 +209,9 @@ int get_remove_reward(Env env, int column, int n_containers)
     return reward;
 }
 
-void handle_sailing(Env env)
+int sail_and_reshuffle(Env env)
 {
+    int sailed_along = 0;
     while (no_containers_at_port(env.T) && !is_last_port(env.T))
     {
         transportation_sail_along(env.T);
@@ -193,7 +219,9 @@ void handle_sailing(Env env)
         *env.containers_left += get_sum(reshuffled);
         transportation_insert_reshuffled(env.T, reshuffled);
         free_array(reshuffled);
+        sailed_along = 1;
     }
+    return sailed_along;
 }
 
 int add_container(Env env, int action)
@@ -207,10 +235,16 @@ int add_container(Env env, int action)
     *env.containers_placed += n_containers;
     *env.containers_left -= n_containers;
 
-    handle_sailing(env);
+    int sailed_along = sail_and_reshuffle(env);
 
-    if (n_containers == n_left_of_type)
+    if (sailed_along)
     {
+        reset_identical_add_limitation(env.bay);
+        reset_identical_remove_limitation(env.bay);
+    }
+    else if (n_containers == n_left_of_type)
+    {
+        reset_identical_add_limitation(env.bay);
         reset_right_most_added_column(env.bay);
     }
 
@@ -225,6 +259,7 @@ int remove_container(Env env, int action)
     int reward = get_remove_reward(env, column, n_containers);
     Array reshuffled = bay_pop_containers(env.bay, column, n_containers);
     transportation_insert_reshuffled(env.T, reshuffled);
+    reset_identical_add_limitation(env.bay);
 
     free_array(reshuffled);
     return reward;

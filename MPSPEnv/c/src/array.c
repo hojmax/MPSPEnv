@@ -88,6 +88,16 @@ Array get_range(int start, int end)
     return array;
 }
 
+void insert_range(Array array, int start, int end)
+{
+    assert(start < end);
+    assert(array.n == end - start);
+    for (int i = 0; i < array.n; i++)
+    {
+        array.values[i] = start + i;
+    }
+}
+
 void shift_array_left(Array array, int n_shifts)
 {
     assert(n_shifts >= 0);

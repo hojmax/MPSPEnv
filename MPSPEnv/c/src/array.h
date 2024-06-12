@@ -17,6 +17,8 @@ Array get_full(int n, int value);
 
 Array get_range(int start, int end);
 
+void insert_range(Array array, int start, int end);
+
 void shift_array_left(Array array, int shifts);
 
 void print_matrix(Array array, int w, int h);

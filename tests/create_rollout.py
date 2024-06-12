@@ -137,10 +137,22 @@ def get_args():
         "--speedy", type=bool, default=True, help="Enable speedy mode (True/False)"
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
+    parser.add_argument(
+        "--premove",
+        type=str,
+        help='Premove comma-separated actions, e.g. "r1c0,a2c1"',
+    )
 
     args = parser.parse_args()
 
     return args
+
+
+def premove_actions(env, actions):
+    actions = actions.split(",")
+    for action in actions:
+        action = string_to_action(action, env.R, env.C)
+        env.step(action)
 
 
 if __name__ == "__main__":
@@ -161,6 +173,10 @@ if __name__ == "__main__":
 
     env = Env(**settings)
     env.reset(seed)
+
+    if args.premove:
+        premove_actions(env, args.premove)
+
     states = run_interactive_game(env)
     save_states(states, settings, seed, get_filename(settings, seed))
     env.close()
