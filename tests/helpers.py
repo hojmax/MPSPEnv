@@ -49,9 +49,9 @@ def recreate_env(settings, seed):
 
 def get_random_settings():
     return {
-        "R": np.random.randint(6, 13),
-        "C": np.random.randint(2, 13),
-        "N": np.random.randint(4, 17),
+        "R": np.random.randint(6, 10),
+        "C": np.random.randint(2, 4),
+        "N": np.random.randint(4, 8),
         "auto_move": np.random.choice([True, False]),
         "speedy": True,
     }

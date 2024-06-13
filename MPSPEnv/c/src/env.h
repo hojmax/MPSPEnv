@@ -4,6 +4,8 @@
 #include "bay.h"
 #include "array.h"
 
+#define min(a, b) (a < b ? a : b)
+
 typedef struct Env
 {
     Transportation_Info *T;

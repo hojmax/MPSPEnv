@@ -2,8 +2,6 @@
 #define TRANSPORTATION_MATRIX_INCLUDED
 #include "array.h"
 
-#define min(a, b) (a < b ? a : b)
-
 typedef struct Transportation_Info
 {
     Array matrix;

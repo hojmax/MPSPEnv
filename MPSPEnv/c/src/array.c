@@ -39,7 +39,7 @@ Array copy_array(Array array)
     return copy;
 }
 
-void print_matrix(Array array, int w, int h)
+void print_matrix(Array array, int h, int w)
 {
     assert(array.n == w * h);
     for (int i = 0; i < h; i++)

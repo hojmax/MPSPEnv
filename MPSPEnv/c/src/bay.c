@@ -237,6 +237,34 @@ void reset_identical_remove_limitation(Bay bay)
     fill_array(bay.max_to_remove_for_identical, bay.R);
 }
 
+Array adding_containers_would_be_right_identical(Bay bay, int type)
+{
+    Array would_be_right_identical = get_zeros(bay.R * bay.C);
+    for (int c1 = bay.C - 2; c1 >= 0; c1--)
+    {
+        for (int c2 = c1 + 1; c2 < bay.C; c2++)
+        {
+            for (int r = bay.R - 1; r >= 0; r--)
+            {
+
+                if (would_be_right_identical.values[r * bay.C + c1])
+                    break;
+
+                int value1 = bay.matrix.values[r * bay.C + c1];
+                int value2 = bay.matrix.values[r * bay.C + c2];
+
+                if (value1 == 0 && value2 == 0)
+                    would_be_right_identical.values[r * bay.C + c1] = 1;
+                else if (value1 == value2 || (value1 == 0 && value2 == type))
+                    continue;
+                else
+                    break;
+            }
+        }
+    }
+    return would_be_right_identical;
+}
+
 Bay get_bay(int R, int C, int N)
 {
     Bay bay;

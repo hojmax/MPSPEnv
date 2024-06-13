@@ -22,11 +22,11 @@ cpputest: $(TEST_OBJS)
 
 # Create .so file for python bindings, but without CppUTest
 build: $(BUILD_OBJS)
-	@gcc -shared -O3 -DNDEBUG -o MPSPEnv/c_lib.so $^
+	@gcc -shared -o MPSPEnv/c_lib.so $^
 
 # Rule to make object files for final build
 %_build.o: %.c %.h
-	@gcc -fPIC -c -O3 -DNDEBUG $< -o $@
+	@gcc -fPIC -c $< -o $@
 
 test:
 	@/opt/homebrew/bin/python3.11 -m pytest -q tests/ -W ignore::DeprecationWarning

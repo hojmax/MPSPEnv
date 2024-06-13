@@ -76,7 +76,25 @@ def print_snapshot(snapshot):
     print()
 
 
-def run_interactive_game(env):
+def take_action(action_str, states):
+    try:
+        action = string_to_action(action_str, env.R, env.C)
+    except ValueError:
+        print("ERROR: Invalid action format")
+        return
+
+    try:
+        env.step(action)
+    except ActionNotAllowed:
+        print("ERROR: Action not allowed")
+        return
+
+    states.append(take_snapshot(env, action_str))
+    print()
+    print_snapshot(states[-1])
+
+
+def run_interactive_game(env, premoves):
     states = [take_snapshot(env)]
     print(
         "Actions follow the format ^[r|a](\d+)c(\d+)$. E.g. r1c0 for removing 1 container from column 0, or a3c2 for adding 3 containers to column 2. Columns are zero-indexed."
@@ -84,23 +102,14 @@ def run_interactive_game(env):
     print("Initial state:")
     print_snapshot(take_snapshot(env))
 
+    for action in premoves:
+        if env.terminated:
+            break
+        take_action(action, states)
+
     while not env.terminated:
         action_str = input("Take action:")
-        try:
-            action = string_to_action(action_str, env.R, env.C)
-        except ValueError:
-            print("ERROR: Invalid action format")
-            continue
-
-        try:
-            env.step(action)
-        except ActionNotAllowed:
-            print("ERROR: Action not allowed")
-            continue
-
-        states.append(take_snapshot(env, action_str))
-        print()
-        print_snapshot(states[-1])
+        take_action(action_str, states)
 
     return states
 
@@ -148,11 +157,11 @@ def get_args():
     return args
 
 
-def premove_actions(env, actions):
-    actions = actions.split(",")
-    for action in actions:
-        action = string_to_action(action, env.R, env.C)
-        env.step(action)
+def get_premoves(args):
+    if args.premove:
+        return args.premove.split(",")
+    else:
+        return []
 
 
 if __name__ == "__main__":
@@ -174,10 +183,7 @@ if __name__ == "__main__":
     env = Env(**settings)
     env.reset(seed)
 
-    if args.premove:
-        premove_actions(env, args.premove)
-
-    states = run_interactive_game(env)
+    states = run_interactive_game(env, get_premoves(args))
     save_states(states, settings, seed, get_filename(settings, seed))
     env.close()
 

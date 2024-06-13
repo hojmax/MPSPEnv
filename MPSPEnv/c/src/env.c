@@ -5,48 +5,80 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct IdenticalInfo
+Array get_left_right_identical(Bay bay)
 {
-    Array matrix_identical;
-    Array left_right_identical;
-} IdenticalInfo;
-
-IdenticalInfo get_identical_info(Bay bay)
-{
-    IdenticalInfo info;
-    info.matrix_identical = get_zeros(bay.C * bay.C); // Whether two columns are identical (symmetric)
-    info.left_right_identical = get_zeros(bay.C * 2); // Whether there exists a column to the left (first C entries) or right (last C entries) that is identical
+    Array left_right_identical = get_zeros(bay.C * 2); // Whether there exists a column to the left (first C entries) or right (last C entries) that is identical
     for (int c1 = 0; c1 < bay.C; c1++)
     {
-        info.matrix_identical.values[c1 * bay.C + c1] = 1;
         for (int c2 = c1 + 1; c2 < bay.C; c2++)
         {
             int identical = columns_identical(bay, c1, c2);
             if (identical)
             {
-                info.matrix_identical.values[c1 * bay.C + c2] = 1;
-                info.matrix_identical.values[c2 * bay.C + c1] = 1;
-                info.left_right_identical.values[c1 + bay.C] = 1;
-                info.left_right_identical.values[c2] = 1;
+                left_right_identical.values[c1 + bay.C] = 1;
+                left_right_identical.values[c2] = 1;
             }
         }
     }
-    return info;
+    return left_right_identical;
 }
 
-int max_to_place_after_action(Env env, int column, int n_to_place, Array matrix_identical)
+int max_to_place_after_action(Env env, int column, int n_containers, int type)
 {
-    int total = 0;
-    for (int i = 0; i < column; i++)
+    assert(containers_in_column(env.bay, column) + n_containers <= env.bay.R);
+    Array bay_copy = copy_array(env.bay.matrix);
+
+    for (int i = 0; i < n_containers; i++)
     {
-        int are_identical = matrix_identical.values[i * env.bay.C + column];
-        if (are_identical)
-            total += n_to_place;
-        else
-            total += env.bay.R - containers_in_column(env.bay, i);
+        int r1 = env.bay.R - 1 - i - containers_in_column(env.bay, column);
+        bay_copy.values[r1 * env.bay.C + column] = type;
     }
+
+    int total = 0;
+    for (int c1 = column - 1; c1 >= 0; c1--)
+    {
+        int max_to_place = env.bay.R - containers_in_column(env.bay, c1);
+        for (int c2 = c1 + 1; c2 < env.bay.C; c2++)
+        {
+            int to_place = 0;
+            for (int r = env.bay.R - 1; r >= 0; r--)
+            {
+                int value1 = bay_copy.values[r * env.bay.C + c1];
+                int value2 = bay_copy.values[r * env.bay.C + c2];
+
+                if (value1 == 0 && value2 == 0)
+                {
+                    max_to_place = min(max_to_place, to_place);
+                    break;
+                }
+                else if (value1 == value2)
+                {
+                    continue;
+                }
+                else if (value1 == 0 && value2 == type)
+                {
+                    to_place++;
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (max_to_place == 0)
+                break;
+        }
+        total += max_to_place;
+        for (int i = 0; i < max_to_place; i++)
+        {
+            int r1 = env.bay.R - 1 - i - containers_in_column(env.bay, c1);
+            bay_copy.values[r1 * env.bay.C + c1] = type;
+        }
+    }
+
+    free_array(bay_copy);
     return total;
-};
+}
 
 // Cases mask does not currently cover for remove:
 // Move sequence 1:
@@ -55,15 +87,8 @@ int max_to_place_after_action(Env env, int column, int n_to_place, Array matrix_
 // Move sequence 2:
 // [0, 1] -r2c1-> [0, 0]
 // [1, 1]         [0, 1]
-// An analagous case exists for adding containers:
-// Move sequence 1:
-// [0, 0] -a2c0-> [0, 1]
-// [0, 1]         [1, 1]
-// Move sequence 2:
-// [0, 0] -a1c0-> [0, 0] -a1c1-> [0, 1]
-// [0, 1]         [1, 1]         [1, 1]
 // In both cases, the sequence transposes to the same state, leading to redudancy in the search space.
-int compute_mask_entry(Env env, int i, Array left_right_identical, Array matrix_identical)
+int compute_mask_entry(Env env, int i, Array left_right_identical, Array column_would_be_superset)
 {
     // RULE 1: The current number of containers plus the number of containers to add must be less than or equal to R
     // RULE 2: The current number of containers minus the number of containers to remove must be greater than or equal to 0
@@ -79,24 +104,27 @@ int compute_mask_entry(Env env, int i, Array left_right_identical, Array matrix_
     int is_add = i < env.bay.C * env.bay.R;
     int column = (i / env.bay.R) % env.bay.C;
     int n_containers = i % env.bay.R + 1;
-    int n_of_type = env.T->matrix.values[env.T->last_non_zero_column];
+
     if (is_add)
     {
-        int non_zero = env.T->last_non_zero_column != -1;
         int no_column_overflow = n_containers + containers_in_column(env.bay, column) <= env.bay.R;
+        if (!no_column_overflow)
+            return 0;
+
+        int type = env.T->last_non_zero_column;
+        int n_of_type = env.T->matrix.values[type];
+        int non_zero = env.T->last_non_zero_column != -1;
         int not_more_than_type = n_of_type >= n_containers;
         int add_to_the_left = column < *(env.bay.right_most_added_column);
-        int not_traped = max_to_place_after_action(env, column, n_containers, matrix_identical) + n_containers >= n_of_type;
-        int no_right_identical = !left_right_identical.values[env.bay.C + column];
-        int not_more_than_previous_identical = n_containers <= env.bay.max_to_place_for_identical.values[env.bay.left_most_identical_index.values[column]];
+        int not_traped = max_to_place_after_action(env, column, n_containers, type) + n_containers >= n_of_type;
+        int not_superset = !column_would_be_superset.values[(env.bay.R - containers_in_column(env.bay, column) - n_containers) * env.bay.C + column];
 
         return (non_zero &&
                 no_column_overflow &&
                 not_more_than_type &&
                 add_to_the_left &&
                 not_traped &&
-                no_right_identical &&
-                not_more_than_previous_identical);
+                not_superset);
     }
     else
     {
@@ -119,7 +147,8 @@ int insert_mask(Env env)
 {
     int last_legal_action = -1;
     int n_legal_actions = 0;
-    IdenticalInfo identical_info = get_identical_info(env.bay);
+    Array left_right_identical = get_left_right_identical(env.bay);
+    Array column_would_be_superset = adding_containers_would_be_right_identical(env.bay, env.T->last_non_zero_column);
 
     for (int is_remove = 0; is_remove <= 1; is_remove++)
     {
@@ -128,7 +157,7 @@ int insert_mask(Env env)
             for (int n_containers = 1; n_containers <= env.bay.R; n_containers++)
             {
                 int index = is_remove * env.bay.C * env.bay.R + column * env.bay.R + n_containers - 1;
-                env.mask.values[index] = compute_mask_entry(env, index, identical_info.left_right_identical, identical_info.matrix_identical);
+                env.mask.values[index] = compute_mask_entry(env, index, left_right_identical, column_would_be_superset);
 
                 if (env.mask.values[index])
                 {
@@ -138,8 +167,9 @@ int insert_mask(Env env)
             }
         }
     }
-    free_array(identical_info.matrix_identical);
-    free_array(identical_info.left_right_identical);
+
+    free_array(left_right_identical);
+    free_array(column_would_be_superset);
 
     if (n_legal_actions == 1)
         return last_legal_action;
