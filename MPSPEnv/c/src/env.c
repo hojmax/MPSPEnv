@@ -88,7 +88,7 @@ int max_to_place_after_action(Env env, int column, int n_containers, int type)
 // [0, 1] -r2c1-> [0, 0]
 // [1, 1]         [0, 1]
 // In both cases, the sequence transposes to the same state, leading to redudancy in the search space.
-int compute_mask_entry(Env env, int i, Array left_right_identical, Array column_would_be_superset)
+int compute_mask_entry(Env env, int i, Array left_right_identical)
 {
     // RULE 1: The current number of containers plus the number of containers to add must be less than or equal to R
     // RULE 2: The current number of containers minus the number of containers to remove must be greater than or equal to 0
@@ -117,7 +117,7 @@ int compute_mask_entry(Env env, int i, Array left_right_identical, Array column_
         int not_more_than_type = n_of_type >= n_containers;
         int add_to_the_left = column < *(env.bay.right_most_added_column);
         int not_traped = max_to_place_after_action(env, column, n_containers, type) + n_containers >= n_of_type;
-        int not_superset = !column_would_be_superset.values[(env.bay.R - containers_in_column(env.bay, column) - n_containers) * env.bay.C + column];
+        int not_superset = !column_would_be_superset(env.bay, column, n_containers, type);
 
         return (non_zero &&
                 no_column_overflow &&
@@ -148,7 +148,6 @@ int insert_mask(Env env)
     int last_legal_action = -1;
     int n_legal_actions = 0;
     Array left_right_identical = get_left_right_identical(env.bay);
-    Array column_would_be_superset = adding_containers_would_be_right_identical(env.bay, env.T->last_non_zero_column);
 
     for (int is_remove = 0; is_remove <= 1; is_remove++)
     {
@@ -157,7 +156,7 @@ int insert_mask(Env env)
             for (int n_containers = 1; n_containers <= env.bay.R; n_containers++)
             {
                 int index = is_remove * env.bay.C * env.bay.R + column * env.bay.R + n_containers - 1;
-                env.mask.values[index] = compute_mask_entry(env, index, left_right_identical, column_would_be_superset);
+                env.mask.values[index] = compute_mask_entry(env, index, left_right_identical);
 
                 if (env.mask.values[index])
                 {
@@ -169,7 +168,6 @@ int insert_mask(Env env)
     }
 
     free_array(left_right_identical);
-    free_array(column_would_be_superset);
 
     if (n_legal_actions == 1)
         return last_legal_action;

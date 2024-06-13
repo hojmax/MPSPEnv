@@ -43,6 +43,8 @@ Array bay_pop_containers(Bay bay, int column, int amount);
 
 Array adding_containers_would_be_right_identical(Bay bay, int type);
 
+int column_would_be_superset(Bay bay, int c1, int n_containers, int type);
+
 int containers_in_column(Bay bay, int column);
 
 void reset_right_most_added_column(Bay bay);
