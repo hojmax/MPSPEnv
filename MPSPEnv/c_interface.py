@@ -21,11 +21,7 @@ class Bay(Structure):
         ("added_since_sailing", POINTER(c_int)),
         ("matrix", Array),
         ("min_container_per_column", Array),
-        ("column_counts", Array),
-        ("left_most_identical_index", Array),
-        ("right_most_identical_index", Array),
-        ("max_to_place_for_identical", Array),
-        ("max_to_remove_for_identical", Array),
+        ("column_counts", Array)
     ]
 
 

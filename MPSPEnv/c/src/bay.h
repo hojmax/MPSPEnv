@@ -15,10 +15,6 @@ typedef struct Bay
     Array matrix;
     Array min_container_per_column;
     Array column_counts;
-    Array left_most_identical_index;
-    Array right_most_identical_index;
-    Array max_to_place_for_identical;
-    Array max_to_remove_for_identical;
 } Bay;
 
 Bay get_bay(int R, int C, int N);
@@ -26,8 +22,6 @@ Bay get_bay(int R, int C, int N);
 void free_bay(Bay bay);
 
 Bay copy_bay(Bay bay);
-
-void reset_identical_add_limitation(Bay bay);
 
 void reset_identical_remove_limitation(Bay bay);
 

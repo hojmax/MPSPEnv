@@ -34,10 +34,6 @@ Bay copy_bay(Bay bay)
     copy.matrix = copy_array(bay.matrix);
     copy.min_container_per_column = copy_array(bay.min_container_per_column);
     copy.column_counts = copy_array(bay.column_counts);
-    copy.left_most_identical_index = copy_array(bay.left_most_identical_index);
-    copy.right_most_identical_index = copy_array(bay.right_most_identical_index);
-    copy.max_to_place_for_identical = copy_array(bay.max_to_place_for_identical);
-    copy.max_to_remove_for_identical = copy_array(bay.max_to_remove_for_identical);
     return copy;
 }
 
@@ -168,8 +164,6 @@ void reorder_bay(Bay bay)
     reorder_matrix_columns(bay.matrix, bay.C, bay.R, new_column_order);
     reorder_array(bay.min_container_per_column, new_column_order);
     reorder_array(bay.column_counts, new_column_order);
-    reorder_array(bay.left_most_identical_index, new_column_order);
-    reorder_array(bay.right_most_identical_index, new_column_order);
     free_array(new_column_order);
 }
 
@@ -205,38 +199,6 @@ int columns_identical(Bay bay, int c1, int c2)
     return 1;
 }
 
-void insert_left_or_right_most_identical(Bay bay, int is_left)
-{
-    for (int c1 = 0; c1 < bay.C; c1++)
-    {
-        for (int c2 = c1 + 1; c2 < bay.C; c2++)
-        {
-            int identical = columns_identical(bay, c1, c2);
-            if (identical)
-            {
-                if (is_left)
-                    bay.left_most_identical_index.values[c2] = bay.left_most_identical_index.values[c1];
-                else
-                    bay.right_most_identical_index.values[c1] = c2;
-            }
-        }
-    }
-}
-
-void reset_identical_add_limitation(Bay bay)
-{
-    insert_range(bay.left_most_identical_index, 0, bay.C);
-    insert_left_or_right_most_identical(bay, 1);
-    fill_array(bay.max_to_place_for_identical, bay.R);
-}
-
-void reset_identical_remove_limitation(Bay bay)
-{
-    insert_range(bay.right_most_identical_index, 0, bay.C);
-    insert_left_or_right_most_identical(bay, 0);
-    fill_array(bay.max_to_remove_for_identical, bay.R);
-}
-
 Bay get_bay(int R, int C, int N)
 {
     Bay bay;
@@ -251,12 +213,6 @@ Bay get_bay(int R, int C, int N)
     bay.min_container_per_column = get_full(C, N);
     bay.column_counts = get_zeros(C);
     reset_pointer_values(bay);
-    bay.left_most_identical_index = get_zeros(C);
-    bay.right_most_identical_index = get_zeros(C);
-    bay.max_to_place_for_identical = get_zeros(C);
-    bay.max_to_remove_for_identical = get_zeros(C);
-    reset_identical_add_limitation(bay);
-    reset_identical_remove_limitation(bay);
 
     return bay;
 }
@@ -269,10 +225,6 @@ void free_bay(Bay bay)
     free_array(bay.matrix);
     free_array(bay.min_container_per_column);
     free_array(bay.column_counts);
-    free_array(bay.left_most_identical_index);
-    free_array(bay.right_most_identical_index);
-    free_array(bay.max_to_place_for_identical);
-    free_array(bay.max_to_remove_for_identical);
 }
 
 void update_min_post_insertion(Bay bay, int column, int container)
@@ -293,18 +245,6 @@ void insert_containers_into_column(Bay bay, int column, int amount, int containe
     bay.column_counts.values[column] += amount;
 }
 
-void remember_identical_placed(Bay bay, int column, int amount)
-{
-    assert(amount <= bay.max_to_place_for_identical.values[bay.left_most_identical_index.values[column]]);
-    bay.max_to_place_for_identical.values[bay.left_most_identical_index.values[column]] = amount;
-}
-
-void remember_identical_removed(Bay bay, int column, int amount)
-{
-    assert(amount <= bay.max_to_remove_for_identical.values[bay.right_most_identical_index.values[column]]);
-    bay.max_to_remove_for_identical.values[bay.right_most_identical_index.values[column]] = amount;
-}
-
 void bay_add_containers(Bay bay, int column, int container, int amount)
 {
     assert(column >= 0 && column < bay.C);
@@ -313,7 +253,6 @@ void bay_add_containers(Bay bay, int column, int container, int amount)
     update_min_post_insertion(bay, column, container);
     *bay.added_since_sailing = 1;
     update_right_most_added_column(bay, column);
-    remember_identical_placed(bay, column, amount);
     reorder_bay(bay);
 }
 
@@ -353,7 +292,6 @@ Array bay_pop_containers(Bay bay, int column, int amount)
     Array reshuffled = pop_containers_from_column(bay, column, amount);
     update_min_post_removal(bay, column);
     update_left_most_removed_column(bay, column);
-    remember_identical_removed(bay, column, amount);
     reorder_bay(bay);
 
     return reshuffled;

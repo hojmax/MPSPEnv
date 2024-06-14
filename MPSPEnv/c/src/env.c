@@ -68,9 +68,8 @@ int get_remove_reward(Env env, int column, int n_containers)
     return reward;
 }
 
-int sail_and_reshuffle(Env env)
+void sail_and_reshuffle(Env env)
 {
-    int sailed_along = 0;
     while (no_containers_at_port(env.T) && !is_last_port(env.T))
     {
         transportation_sail_along(env.T);
@@ -78,9 +77,7 @@ int sail_and_reshuffle(Env env)
         *env.containers_left += get_sum(reshuffled);
         transportation_insert_reshuffled(env.T, reshuffled);
         free_array(reshuffled);
-        sailed_along = 1;
     }
-    return sailed_along;
 }
 
 int add_container(Env env, int action)
@@ -94,16 +91,10 @@ int add_container(Env env, int action)
     *env.containers_placed += n_containers;
     *env.containers_left -= n_containers;
 
-    int sailed_along = sail_and_reshuffle(env);
+    sail_and_reshuffle(env);
 
-    if (sailed_along)
+    if (n_containers == n_left_of_type)
     {
-        reset_identical_add_limitation(env.bay);
-        reset_identical_remove_limitation(env.bay);
-    }
-    else if (n_containers == n_left_of_type)
-    {
-        reset_identical_add_limitation(env.bay);
         reset_right_most_added_column(env.bay);
     }
 
@@ -118,7 +109,6 @@ int remove_container(Env env, int action)
     int reward = get_remove_reward(env, column, n_containers);
     Array reshuffled = bay_pop_containers(env.bay, column, n_containers);
     transportation_insert_reshuffled(env.T, reshuffled);
-    reset_identical_add_limitation(env.bay);
 
     free_array(reshuffled);
     return reward;
