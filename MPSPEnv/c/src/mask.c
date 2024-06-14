@@ -24,6 +24,28 @@ int column_would_be_superset(Bay bay, int c1, int n_containers, int type)
     return 0;
 }
 
+int column_would_be_subset(Bay bay, int c1, int n_containers)
+{
+    for (int c2 = c1 - 1; c2 >= 0; c2--)
+    {
+        int are_identical = 1;
+        for (int r = bay.R - 1; r >= bay.R - 1 + n_containers - containers_in_column(bay, c1); r--)
+        {
+            int value1 = bay.matrix.values[r * bay.C + c1];
+            int value2 = bay.matrix.values[r * bay.C + c2];
+
+            if (value1 != value2)
+            {
+                are_identical = 0;
+                break;
+            }
+        }
+        if (are_identical)
+            return 1;
+    }
+    return 0;
+}
+
 int max_to_place_after_action(Env env, int column, int n_containers, int type)
 {
     assert(containers_in_column(env.bay, column) + n_containers <= env.bay.R);
@@ -81,27 +103,8 @@ int max_to_place_after_action(Env env, int column, int n_containers, int type)
     return total;
 }
 
-// Cases mask does not currently cover for remove:
-// Move sequence 1:
-// [0, 1] -r1c0-> [0, 1] -r1c1-> [0, 0]
-// [1, 1]         [0, 1]         [0, 1]
-// Move sequence 2:
-// [0, 1] -r2c1-> [0, 0]
-// [1, 1]         [0, 1]
-// In both cases, the sequence transposes to the same state, leading to redudancy in the search space.
 int compute_mask_entry(Env env, int i, Array left_right_identical)
 {
-    // RULE 1: The current number of containers plus the number of containers to add must be less than or equal to R
-    // RULE 2: The current number of containers minus the number of containers to remove must be greater than or equal to 0
-    // RULE 3: You may only add one type of container at a time (i.e. you cant add 2x2s and 2x5s in a column at the same time)
-    // The rules below assumes that columns are sorted according to the values in the rows from bottom to top:
-    // RULE 4: You may only remove if you have not yet added containers (resets after sailing)
-    // RULE 5: You may only add to a column that is to the left of the last column you added to (resets after each container type)
-    // RULE 6: You may only remove from a column that is to the right of the last column you removed from (resets after sailing)
-    // RULE 7: If two columns are identical, you may only add to the rightmost column
-    // RULE 8: If two columns are identical, you may only remove from the leftmost column
-    // RULE 9: You may not place more containers into a column than you have done into a previous identical column (resets after each container type)
-    // RULE 10: You may not take an action that leaves no options for the next action (relevant for rule 5 and 9)
     int is_add = i < env.bay.C * env.bay.R;
     int column = (i / env.bay.R) % env.bay.C;
     int n_containers = i % env.bay.R + 1;
@@ -118,24 +121,28 @@ int compute_mask_entry(Env env, int i, Array left_right_identical)
         if (!non_zero || !not_more_than_type || !no_column_overflow || !add_to_the_left)
             return 0;
 
-        // These are more expensive to compute, so we only do it if the basic rules are satisfied
+        // More expensive to compute, so we only do it if the basic rules are satisfied
         int not_traped = max_to_place_after_action(env, column, n_containers, type) + n_containers >= n_of_type;
+        if (!not_traped)
+            return 0;
+
         int not_superset = !column_would_be_superset(env.bay, column, n_containers, type);
-        return (not_traped && not_superset);
+        return not_superset;
     }
     else
     {
         int have_not_added_yet = !*(env.bay.added_since_sailing);
         int not_too_few = (containers_in_column(env.bay, column) - n_containers >= 0);
         int remove_to_the_right = column > *(env.bay.left_most_removed_column);
-        int no_left_identical = !left_right_identical.values[column];
-        int not_more_than_previous_identical = n_containers <= env.bay.max_to_remove_for_identical.values[env.bay.right_most_identical_index.values[column]];
 
-        return (have_not_added_yet &&
-                not_too_few &&
-                remove_to_the_right &&
-                no_left_identical &&
-                not_more_than_previous_identical);
+        if (!have_not_added_yet ||
+            !not_too_few ||
+            !remove_to_the_right)
+            return 0;
+
+        // More expensive to compute, so we only do it if the basic rules are satisfied
+        int would_not_be_subset = !column_would_be_subset(env.bay, column, n_containers);
+        return would_not_be_subset;
     }
 }
 
