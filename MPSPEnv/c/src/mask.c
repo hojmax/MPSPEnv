@@ -103,7 +103,7 @@ int max_to_place_after_action(Env env, int column, int n_containers, int type)
     return total;
 }
 
-int compute_mask_entry(Env env, int i, Array left_right_identical)
+int compute_mask_entry(Env env, int i)
 {
     int is_add = i < env.bay.C * env.bay.R;
     int column = (i / env.bay.R) % env.bay.C;
@@ -146,30 +146,11 @@ int compute_mask_entry(Env env, int i, Array left_right_identical)
     }
 }
 
-Array get_left_right_identical(Bay bay)
-{
-    Array left_right_identical = get_zeros(bay.C * 2); // Whether there exists a column to the left (first C entries) or right (last C entries) that is identical
-    for (int c1 = 0; c1 < bay.C; c1++)
-    {
-        for (int c2 = c1 + 1; c2 < bay.C; c2++)
-        {
-            int identical = columns_identical(bay, c1, c2);
-            if (identical)
-            {
-                left_right_identical.values[c1 + bay.C] = 1;
-                left_right_identical.values[c2] = 1;
-            }
-        }
-    }
-    return left_right_identical;
-}
-
 // If there is only one legal action, the action index is returned, otherwise -1 is returned
 int insert_mask(Env env)
 {
     int last_legal_action = -1;
     int n_legal_actions = 0;
-    Array left_right_identical = get_left_right_identical(env.bay);
 
     for (int is_remove = 0; is_remove <= 1; is_remove++)
     {
@@ -178,7 +159,7 @@ int insert_mask(Env env)
             for (int n_containers = 1; n_containers <= env.bay.R; n_containers++)
             {
                 int index = is_remove * env.bay.C * env.bay.R + column * env.bay.R + n_containers - 1;
-                env.mask.values[index] = compute_mask_entry(env, index, left_right_identical);
+                env.mask.values[index] = compute_mask_entry(env, index);
 
                 if (env.mask.values[index])
                 {
@@ -188,8 +169,6 @@ int insert_mask(Env env)
             }
         }
     }
-
-    free_array(left_right_identical);
 
     if (n_legal_actions == 1)
         return last_legal_action;

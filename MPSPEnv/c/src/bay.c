@@ -183,22 +183,6 @@ Array bay_sail_along(Bay bay, Env *env)
     return reshuffled;
 }
 
-int columns_identical(Bay bay, int c1, int c2)
-{
-    for (int r = bay.R - 1; r >= 0; r--)
-    {
-        int value1 = bay.matrix.values[r * bay.C + c1];
-        int value2 = bay.matrix.values[r * bay.C + c2];
-
-        if (value1 != value2)
-            return 0;
-
-        if (value1 == 0)
-            break;
-    }
-    return 1;
-}
-
 Bay get_bay(int R, int C, int N)
 {
     Bay bay;

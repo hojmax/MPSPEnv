@@ -23,10 +23,6 @@ void free_bay(Bay bay);
 
 Bay copy_bay(Bay bay);
 
-void reset_identical_remove_limitation(Bay bay);
-
-int columns_identical(Bay bay, int c1, int c2);
-
 int is_container_blocking(Bay bay, int column, int container);
 
 void bay_add_containers(Bay bay, int column, int container, int amount);
